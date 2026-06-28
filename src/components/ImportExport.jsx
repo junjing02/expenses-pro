@@ -74,7 +74,7 @@ export default function ImportExport({ userId, accounts, transactions, onDataImp
 
   // Safe RFC 4180 CSV parser to handle quotes, commas and newlines in values
   const parseCSVText = (text) => {
-    const lines = [];
+    const parsedLines = [];
     let row = [''];
     let inQuotes = false;
 
@@ -95,58 +95,114 @@ export default function ImportExport({ userId, accounts, transactions, onDataImp
         if (char === '\r' && nextChar === '\n') {
           i++;
         }
-        if (row.length > 1 || row[0] !== '') {
-          lines.push(row);
-        }
+        parsedLines.push(row);
         row = [''];
       } else {
         row[row.length - 1] += char;
       }
     }
     if (row.length > 1 || row[0] !== '') {
-      lines.push(row);
+      parsedLines.push(row);
     }
 
-    if (lines.length < 2) return [];
+    if (parsedLines.length === 0) return [];
 
-    // Header index mapping (case insensitive matching)
-    const headers = lines[0].map(h => h.trim().toLowerCase());
-    const dataLines = lines.slice(1);
+    // Find the header row (skipping empty lines and comments starting with #)
+    let headerIdx = -1;
+    for (let i = 0; i < parsedLines.length; i++) {
+      const firstVal = parsedLines[i][0]?.trim() || '';
+      if (firstVal && !firstVal.startsWith('#')) {
+        headerIdx = i;
+        break;
+      }
+    }
 
-    const dateIdx = headers.findIndex(h => h.includes('date'));
-    const descIdx = headers.findIndex(h => h.includes('desc') || h.includes('merchant') || h.includes('item'));
-    const typeIdx = headers.findIndex(h => h.includes('type') || h.includes('flow'));
+    if (headerIdx === -1 || headerIdx >= parsedLines.length) {
+      throw new Error('CSV must contain a column headers row.');
+    }
+
+    const headers = parsedLines[headerIdx].map(h => h.trim().toLowerCase());
+    const dataLines = parsedLines.slice(headerIdx + 1).filter(line => {
+      if (line.length === 0 || (line.length === 1 && line[0] === '')) return false;
+      const firstVal = line[0]?.trim() || '';
+      return !firstVal.startsWith('#');
+    });
+
+    const dateIdx = headers.findIndex(h => h === 'date');
+    const descIdx = headers.findIndex(h => h.includes('desc') || h.includes('merchant') || h.includes('item') || h === 'name');
+    
+    // Detect single Amount vs double Expense/Income columns
     const amtIdx = headers.findIndex(h => h.includes('amount') || h.includes('value') || h.includes('price'));
+    const expenseIdx = headers.findIndex(h => h === 'expense');
+    const incomeIdx = headers.findIndex(h => h === 'income');
+
     const catIdx = headers.findIndex(h => h.includes('cat'));
     const accIdx = headers.findIndex(h => h.includes('acc'));
 
-    // Check minimum headers (Amount, Date, Description are required)
-    if (amtIdx === -1 || dateIdx === -1 || descIdx === -1) {
-      throw new Error('CSV must contain column headers for Date, Amount, and Description.');
+    const hasSingleAmount = amtIdx !== -1;
+    const hasDoubleAmount = expenseIdx !== -1 && incomeIdx !== -1;
+
+    if (dateIdx === -1 || descIdx === -1 || (!hasSingleAmount && !hasDoubleAmount)) {
+      throw new Error('CSV must contain column headers for Date, Description (or Name), and Amount (or Expense/Income).');
     }
 
+    // Currencies parser
+    const parseCurrencyString = (str) => {
+      if (!str) return 0.00;
+      // Strip currency signs, whitespace, thousands commas, keep decimals
+      const sanitized = str.replace(/[^0-9.-]/g, '');
+      const val = parseFloat(sanitized);
+      return isNaN(val) ? 0.00 : Math.abs(val);
+    };
+
+    // Date parser for DD/MM/YYYY & standard dates
+    const parseCustomDate = (str) => {
+      if (!str) return new Date().toISOString().split('T')[0];
+      const ddMmYyyyRegex = /^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/;
+      const match = str.match(ddMmYyyyRegex);
+      if (match) {
+        const [_, day, month, year] = match;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        return d.toISOString().split('T')[0];
+      }
+      return new Date().toISOString().split('T')[0];
+    };
+
     return dataLines.map(line => {
-      const rawType = typeIdx !== -1 ? line[typeIdx]?.trim().toLowerCase() : 'expense';
-      const type = rawType.includes('inc') || rawType === 'deposit' || rawType === 'credit' ? 'income' : 'expense';
-      
-      const rawAmt = line[amtIdx] ? line[amtIdx].replace(/[^0-9.-]/g, '') : '0';
-      const amount = Math.abs(parseFloat(rawAmt)) || 0.00;
+      let type = 'expense';
+      let amount = 0.00;
+
+      if (hasDoubleAmount) {
+        const rawExpense = line[expenseIdx]?.trim() || '';
+        const rawIncome = line[incomeIdx]?.trim() || '';
+
+        if (rawIncome && rawIncome !== '') {
+          type = 'income';
+          amount = parseCurrencyString(rawIncome);
+        } else if (rawExpense && rawExpense !== '') {
+          type = 'expense';
+          amount = parseCurrencyString(rawExpense);
+        }
+      } else {
+        const typeIdx = headers.findIndex(h => h.includes('type') || h.includes('flow'));
+        const rawType = typeIdx !== -1 ? line[typeIdx]?.trim().toLowerCase() : 'expense';
+        type = rawType.includes('inc') || rawType === 'deposit' || rawType === 'credit' ? 'income' : 'expense';
+        const rawAmt = line[amtIdx] ? line[amtIdx] : '0';
+        amount = parseCurrencyString(rawAmt);
+      }
 
       const rawDate = line[dateIdx]?.trim();
-      let formattedDate = new Date().toISOString().split('T')[0];
-      if (rawDate) {
-        const d = new Date(rawDate);
-        if (!isNaN(d.getTime())) {
-          formattedDate = d.toISOString().split('T')[0];
-        }
-      }
+      const formattedDate = parseCustomDate(rawDate);
 
       return {
         date: formattedDate,
         description: line[descIdx]?.trim() || 'Imported Transaction',
         type,
         amount,
-        category: catIdx !== -1 ? line[catIdx]?.trim().toLowerCase() : 'shopping',
+        category: catIdx !== -1 && line[catIdx] ? line[catIdx].trim().toLowerCase() : 'shopping',
         accountName: accIdx !== -1 && line[accIdx] ? line[accIdx].trim() : 'Checking'
       };
     }).filter(row => row.amount > 0);
