@@ -4,23 +4,21 @@ import { PlusCircle, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const CATEGORIES = {
   expense: [
-    { id: 'food', name: 'Food & Dining', emoji: '🍔' },
-    { id: 'transport', name: 'Transport & Fuel', emoji: '🚗' },
-    { id: 'rent', name: 'Rent & Housing', emoji: '🏠' },
-    { id: 'shopping', name: 'Shopping & Styling', emoji: '🛍️' },
-    { id: 'entertainment', name: 'Leisure & Fun', emoji: '🍿' },
-    { id: 'health', name: 'Health & Medical', emoji: '🏥' },
-    { id: 'education', name: 'Education', emoji: '🎓' },
-    { id: 'travel', name: 'Travel & Vacation', emoji: '✈️' },
-    { id: 'utilities', name: 'Utilities & Bills', emoji: '🔌' },
-    { id: 'other_expense', name: 'Other Expense', emoji: '🏷️' }
+    { id: 'Eating Out', name: 'Eating Out', emoji: '🍔', color: '#FDA4AF' },
+    { id: 'Shopping', name: 'Shopping', emoji: '🛍️', color: '#F472B6' },
+    { id: 'Sports', name: 'Sports', emoji: '⚽', color: '#93C5FD' },
+    { id: 'Entertainment', name: 'Entertainment', emoji: '🍿', color: '#C084FC' },
+    { id: 'Fuel', name: 'Fuel', emoji: '⛽', color: '#FDE047' },
+    { id: 'Travel', name: 'Travel', emoji: '✈️', color: '#67E8F9' },
+    { id: 'Public Transport', name: 'Public Transport', emoji: '🚌', color: '#A7F3D0' },
+    { id: 'Other Expense', name: 'Other Expense', emoji: '🏷️', color: '#CBD5E1' }
   ],
   income: [
-    { id: 'salary', name: 'Salary & Wages', emoji: '💰' },
-    { id: 'investments', name: 'Investments', emoji: '📈' },
-    { id: 'freelance', name: 'Freelance Hustle', emoji: '💼' },
-    { id: 'gifts', name: 'Gifts & Awards', emoji: '🎁' },
-    { id: 'other_income', name: 'Other Income', emoji: '🔄' }
+    { id: 'Salary', name: 'Salary', emoji: '💰', color: '#34D399' },
+    { id: 'Investments', name: 'Investments', emoji: '📈', color: '#60A5FA' },
+    { id: 'Freelance', name: 'Freelance', emoji: '💼', color: '#A78BFA' },
+    { id: 'Gifts', name: 'Gifts', emoji: '🎁', color: '#F472B6' },
+    { id: 'Other Income', name: 'Other Income', emoji: '🔄', color: '#94A3B8' }
   ]
 };
 

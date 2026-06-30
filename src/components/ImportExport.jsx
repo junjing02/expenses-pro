@@ -280,13 +280,26 @@ export default function ImportExport({ userId, accounts, transactions, onDataImp
   };
 
   const sanitizeCategory = (cat, type) => {
-    const list = type === 'income' 
-      ? ['salary', 'investments', 'freelance', 'gifts', 'other_income']
-      : ['food', 'transport', 'rent', 'shopping', 'entertainment', 'health', 'education', 'travel', 'utilities', 'other_expense'];
+    if (!cat) return type === 'income' ? 'Other Income' : 'Other Expense';
     
-    const formatted = cat.toLowerCase().replace(/[^a-z_]/g, '');
-    const matched = list.find(l => l.includes(formatted) || formatted.includes(l));
-    return matched || (type === 'income' ? 'other_income' : 'other_expense');
+    const formatted = cat.trim().toLowerCase();
+    
+    // Aligned to Moneyboard categories list
+    const list = type === 'income' 
+      ? ['Salary', 'Investments', 'Freelance', 'Gifts', 'Other Income']
+      : ['Eating Out', 'Shopping', 'Sports', 'Entertainment', 'Fuel', 'Travel', 'Public Transport', 'Other Expense'];
+    
+    // 1. Check exact match
+    const matched = list.find(l => l.toLowerCase() === formatted);
+    if (matched) return matched;
+    
+    // 2. Fuzzy match (e.g., checking stripped names)
+    const simplifiedFormatted = formatted.replace(/[^a-z0-9]/g, '');
+    const fuzzyMatched = list.find(l => l.toLowerCase().replace(/[^a-z0-9]/g, '') === simplifiedFormatted);
+    if (fuzzyMatched) return fuzzyMatched;
+    
+    // 3. Fallback: Capitalize first letters of raw category and return it!
+    return cat.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
   };
 
   return (
