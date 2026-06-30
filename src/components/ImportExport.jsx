@@ -7,6 +7,44 @@ export default function ImportExport({ userId, accounts, transactions, onDataImp
   const [previewRows, setPreviewRows] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [resetting, setResetting] = useState(false);
+
+  const handleResetData = async () => {
+    const confirmation = confirm("WARNING: Are you absolutely sure you want to permanently delete all your transactions, receipt items, and reset all your account balances to $0.00? This cannot be undone.");
+    if (!confirmation) return;
+    
+    setResetting(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // 1. Delete all transactions for this user. This will automatically delete associated receipt_items due to cascade.
+      const { error: txDeleteError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', userId);
+
+      if (txDeleteError) throw txDeleteError;
+
+      // 2. Reset all account balances to 0.00 for this user.
+      const { error: accUpdateError } = await supabase
+        .from('accounts')
+        .update({ current_balance: 0.00 })
+        .eq('user_id', userId);
+
+      if (accUpdateError) throw accUpdateError;
+
+      setSuccess('All transaction history deleted and account balances reset successfully!');
+      
+      if (onDataImported) {
+        onDataImported(); // Refresh dashboard state
+      }
+    } catch (err) {
+      setError(`Failed to reset database: ${err.message}`);
+    } finally {
+      setResetting(false);
+    }
+  };
 
   // 1. Export Transactions to CSV
   const handleExportCSV = () => {
@@ -427,6 +465,24 @@ export default function ImportExport({ userId, accounts, transactions, onDataImp
           </div>
         </div>
       )}
+
+      {/* Danger Zone: Reset Account Data */}
+      <div className="mt-8 border border-rose-250 dark:border-rose-950/45 p-5 rounded-2xl bg-rose-50/10 dark:bg-rose-950/5">
+        <h3 className="text-xs font-bold text-rose-600 dark:text-rose-455 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+          ⚠️ Danger Zone
+        </h3>
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-4">
+          Permanently delete all transaction ledger history, receipt items, and reset your accounts balances to $0.00.
+        </p>
+        <button
+          onClick={handleResetData}
+          disabled={resetting}
+          className="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+        >
+          {resetting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+          Reset Database Account Data
+        </button>
+      </div>
     </div>
   );
 }

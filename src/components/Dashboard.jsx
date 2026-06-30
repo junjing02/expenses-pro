@@ -1,16 +1,19 @@
-import React from 'react';
-import { Doughnut } from 'react-chartjs-2';
+import React, { useState } from 'react';
+import { Doughnut, Bar } from 'react-chartjs-2';
 import { CATEGORIES } from './TransactionForm';
 import {
   Chart as ChartJS,
   ArcElement,
   Tooltip,
-  Legend
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale
 } from 'chart.js';
-import { Coins, ArrowUpRight, ArrowDownLeft, Landmark, PieChart } from 'lucide-react';
+import { Coins, ArrowUpRight, ArrowDownLeft, Landmark, PieChart, TrendingUp } from 'lucide-react';
 
 // Register Chart.js components
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 export default function Dashboard({ accounts, transactions }) {
   // 1. Calculate Net Worth
@@ -82,6 +85,145 @@ export default function Dashboard({ accounts, transactions }) {
 
   // Check if dark mode is active
   const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+
+  const [timeframe, setTimeframe] = useState('monthly'); // 'monthly' or 'weekly'
+
+  // Helper function to generate last 6 months or weeks labels and calculate sum values
+  const getTrendData = () => {
+    const labels = [];
+    const incomeData = [];
+    const expenseData = [];
+
+    const now = new Date();
+
+    if (timeframe === 'monthly') {
+      // Last 6 months
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthLabel = d.toLocaleString('en-US', { month: 'short' });
+        const yearLabel = d.getFullYear();
+        labels.push(`${monthLabel} ${yearLabel}`);
+
+        // Filter transactions in this month/year
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        let incSum = 0;
+        let expSum = 0;
+
+        transactions.forEach(tx => {
+          if (tx.transaction_date) {
+            const txDateParts = tx.transaction_date.split('-');
+            const txKey = `${txDateParts[0]}-${txDateParts[1]}`;
+            if (txKey === key) {
+              if (tx.type === 'income') incSum += parseFloat(tx.amount || 0);
+              else expSum += parseFloat(tx.amount || 0);
+            }
+          }
+        });
+
+        incomeData.push(incSum);
+        expenseData.push(expSum);
+      }
+    } else {
+      // Last 6 weeks (based on starting Sunday date)
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - now.getDay() - (i * 7)); // Starting Sunday of the week i weeks ago
+        const weekLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        labels.push(`Wk of ${weekLabel}`);
+
+        // Set start and end range for this week (Sunday to Saturday)
+        const startRange = new Date(d);
+        startRange.setHours(0, 0, 0, 0);
+        
+        const endRange = new Date(d);
+        endRange.setDate(d.getDate() + 6);
+        endRange.setHours(23, 59, 59, 999);
+
+        let incSum = 0;
+        let expSum = 0;
+
+        transactions.forEach(tx => {
+          if (tx.transaction_date) {
+            const txDateParts = tx.transaction_date.split('-');
+            const txDate = new Date(txDateParts[0], txDateParts[1] - 1, txDateParts[2]);
+            if (txDate >= startRange && txDate <= endRange) {
+              if (tx.type === 'income') incSum += parseFloat(tx.amount || 0);
+              else expSum += parseFloat(tx.amount || 0);
+            }
+          }
+        });
+
+        incomeData.push(incSum);
+        expenseData.push(expSum);
+      }
+    }
+
+    return { labels, incomeData, expenseData };
+  };
+
+  const trend = getTrendData();
+
+  const trendChartData = {
+    labels: trend.labels,
+    datasets: [
+      {
+        label: 'Income',
+        data: trend.incomeData,
+        backgroundColor: 'rgba(52, 211, 153, 0.85)', // Emerald 400
+        borderRadius: 6,
+      },
+      {
+        label: 'Expenses',
+        data: trend.expenseData,
+        backgroundColor: 'rgba(244, 114, 182, 0.85)', // Pink 400
+        borderRadius: 6,
+      }
+    ]
+  };
+
+  const trendChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          color: isDarkMode ? '#94A3B8' : '#475569',
+          boxWidth: 12,
+          font: { size: 10, weight: 'bold' }
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return ` ${context.dataset.label}: $${context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          color: isDarkMode ? '#64748B' : '#94A3B8',
+          font: { size: 9, weight: 'bold' }
+        }
+      },
+      y: {
+        grid: {
+          color: isDarkMode ? 'rgba(30, 41, 59, 0.5)' : 'rgba(226, 232, 240, 0.6)'
+        },
+        ticks: {
+          color: isDarkMode ? '#64748B' : '#94A3B8',
+          font: { size: 9 },
+          callback: function(value) {
+            return '$' + value;
+          }
+        }
+      }
+    }
+  };
 
   // Chart Data Configuration
   const defaultChartData = {
@@ -229,6 +371,40 @@ export default function Dashboard({ accounts, transactions }) {
               ))
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Cash Flow Trends Widget */}
+      <section className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-premium border border-slate-100 dark:border-slate-800/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800/60 mb-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-indigo-500" />
+              Cash Flow Trends
+            </h2>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Compare monthly or weekly cash flows</p>
+          </div>
+
+          {/* Timeframe selector toggle */}
+          <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200/30 dark:border-slate-800/30">
+            <button
+              onClick={() => setTimeframe('weekly')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${timeframe === 'weekly' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/10' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Weekly Trend
+            </button>
+            <button
+              onClick={() => setTimeframe('monthly')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${timeframe === 'monthly' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/10' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Monthly Trend
+            </button>
+          </div>
+        </div>
+
+        {/* Trend Bar Chart wrapper */}
+        <div className="h-64 w-full relative">
+          <Bar data={trendChartData} options={trendChartOptions} />
         </div>
       </section>
     </div>
