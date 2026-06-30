@@ -32,6 +32,7 @@ export default function App() {
   const [showScanner, setShowScanner] = useState(false);
   const [showFabMenu, setShowFabMenu] = useState(false);
   const [showSubscriptions, setShowSubscriptions] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   // 1. Session state hook
   useEffect(() => {
@@ -109,6 +110,21 @@ export default function App() {
       console.error('Error fetching data:', err.message);
     } finally {
       setDataLoading(false);
+    }
+  };
+
+  const handlePopulateDemo = async () => {
+    if (!session?.user?.id) return;
+    setDemoLoading(true);
+    try {
+      const { populateDemoData } = await import('./utils/demoData');
+      await populateDemoData(session.user.id);
+      await fetchUserData();
+      alert('Sandbox data populated successfully! Enjoy exploring Moneyboard Pro.');
+    } catch (err) {
+      alert('Failed to populate demo data: ' + err.message);
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -326,12 +342,31 @@ export default function App() {
           
           {/* TAB 1: HOME LEDGER */}
           {currentTab === 'home' && (
-            <HomeLedger 
-              userId={session.user.id} 
-              accounts={accounts} 
-              transactions={transactions} 
-              onTransactionDeleted={fetchUserData} 
-            />
+            <div className="space-y-6">
+              {accounts.length === 0 && transactions.length === 0 && (
+                <div className="bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-200/30 dark:border-indigo-900/20 rounded-3xl p-6 text-center space-y-4 animate-scale-in">
+                  <span className="text-3xl block">👋</span>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Welcome to Moneyboard Pro Sandbox!</h3>
+                  <p className="text-xs text-slate-450 dark:text-slate-500 max-w-sm mx-auto leading-relaxed">
+                    Your ledger is currently empty. Click the button below to instantly populate your dashboard with realistic Malaysian demo data (wallets, transactions, budget limits, and savings goals) to see the app in action!
+                  </p>
+                  <button
+                    onClick={handlePopulateDemo}
+                    disabled={demoLoading}
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-550 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-650/15 transition-all flex items-center justify-center gap-1.5 mx-auto"
+                  >
+                    {demoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '📊 Populate Demo Sandbox'}
+                  </button>
+                </div>
+              )}
+
+              <HomeLedger 
+                userId={session.user.id} 
+                accounts={accounts} 
+                transactions={transactions} 
+                onTransactionDeleted={fetchUserData} 
+              />
+            </div>
           )}
 
           {/* TAB 2: WALLETS */}

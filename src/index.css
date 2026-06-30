@@ -18,59 +18,83 @@
   scrollbar-width: none;  /* Firefox */
 }
 
+/* Premium Card Shadows */
+.shadow-premium {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.03), 0 4px 12px -4px rgba(0, 0, 0, 0.02);
+}
+.dark .shadow-premium {
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 8px 16px -8px rgba(0, 0, 0, 0.2);
+}
+
+/* Card Hover Glow Micro-lifts */
+.hover-glow {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-glow:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 35px -5px rgba(99, 102, 241, 0.05), 0 8px 15px -8px rgba(99, 102, 241, 0.05);
+}
+.dark .hover-glow:hover {
+  box-shadow: 0 25px 45px -10px rgba(99, 102, 241, 0.15), 0 10px 20px -10px rgba(99, 102, 241, 0.1);
+}
+
 /* Glassmorphism Classes */
 .glassmorphism {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .dark .glassmorphism {
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 /* Blur Backdrop */
 .modal-backdrop-blur {
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* Animation Keyframes */
 @keyframes scaleIn {
-  from { transform: scale(0.95); opacity: 0; }
+  from { transform: scale(0.96); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
 @keyframes slideIn {
-  from { transform: translateY(16px); opacity: 0; }
+  from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes toastIn {
-  from { transform: translateY(20px) scale(0.9); opacity: 0; }
+  from { transform: translateY(25px) scale(0.92); opacity: 0; }
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 /* Animation Utilities */
 .animate-scale-in {
-  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-slide-in {
-  animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-toast-in {
-  animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
+  animation: toastIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
 }
 
-/* Smooth transition for hover lists */
+/* Smooth transition for ledger items */
 .ledger-item {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ledger-item:hover {
-  transform: translateX(4px);
+  transform: translateX(5px);
+  background-color: rgba(248, 250, 252, 0.8);
+}
+.dark .ledger-item:hover {
+  background-color: rgba(30, 41, 59, 0.4);
 }
