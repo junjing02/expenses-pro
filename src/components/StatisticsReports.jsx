@@ -15,16 +15,13 @@ import {
 } from 'chart.js';
 import { ChevronLeft, ChevronRight, PieChart, TrendingUp, Layers, ChevronDown, ChevronUp } from 'lucide-react';
 
-// Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title);
 
 export default function StatisticsReports({ transactions = [] }) {
   const [timeframe, setTimeframe] = useState('month'); // week, month, year, all
   const [currentDate, setCurrentDate] = useState(new Date());
   const [expandedCategory, setExpandedCategory] = useState(null);
-  const [viewMode, setViewMode] = useState('both'); // 'both', 'groups' (can toggle chart cards)
 
-  // 1. Move timeframe intervals
   const handlePrev = () => {
     if (timeframe === 'week') {
       setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() - 7));
@@ -45,11 +42,9 @@ export default function StatisticsReports({ transactions = [] }) {
     }
   };
 
-  // Label text for navigation bar
   const getPeriodLabel = () => {
     if (timeframe === 'all') return 'All Time';
     if (timeframe === 'week') {
-      // Start Sunday of week
       const sun = new Date(currentDate);
       sun.setDate(currentDate.getDate() - currentDate.getDay());
       const sat = new Date(sun);
@@ -65,7 +60,6 @@ export default function StatisticsReports({ transactions = [] }) {
     return '';
   };
 
-  // 2. Filter transactions to current timeframe (Expenses only for breakdown, but Trends can show cashflow)
   const filteredTransactions = transactions.filter(tx => {
     if (!tx.transaction_date) return false;
     const txDate = new Date(tx.transaction_date);
@@ -98,7 +92,6 @@ export default function StatisticsReports({ transactions = [] }) {
   const expenseTransactions = filteredTransactions.filter(tx => tx.type === 'expense');
   const totalExpenseSum = expenseTransactions.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
 
-  // 3. Compile Category Distribution Breakdown
   const categoryMap = {};
   const categoryCountMap = {};
   expenseTransactions.forEach(tx => {
@@ -137,12 +130,10 @@ export default function StatisticsReports({ transactions = [] }) {
 
   breakdownList.sort((a, b) => b.amount - a.amount);
 
-  // 4. Generate Line Chart Daily trend data
   const getLineChartData = () => {
     const dailyMap = {};
     
     if (timeframe === 'month') {
-      // Days of the month
       const totalDays = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
       for (let i = 1; i <= totalDays; i++) {
         dailyMap[i] = 0;
@@ -162,10 +153,8 @@ export default function StatisticsReports({ transactions = [] }) {
       });
 
       const data = Object.values(dailyMap);
-
       return { labels, data };
     } else {
-      // Fallback for weekly/yearly: just group chronologically
       const sortedTxs = [...expenseTransactions].sort((a, b) => a.transaction_date.localeCompare(b.transaction_date));
       const labels = sortedTxs.map(tx => tx.transaction_date.split('-').slice(1).join('/'));
       const data = sortedTxs.map(tx => tx.amount);
@@ -174,18 +163,15 @@ export default function StatisticsReports({ transactions = [] }) {
   };
 
   const lineTrend = getLineChartData();
-
-  // Dark mode trigger checks
   const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 
-  // Chart configs
   const lineChartData = {
     labels: lineTrend.labels,
     datasets: [{
       label: 'Spending',
       data: lineTrend.data,
-      borderColor: '#EF4444', // Red line from screenshots
-      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderColor: '#EF4444',
+      backgroundColor: 'rgba(239, 68, 68, 0.05)',
       borderWidth: 2.5,
       pointBackgroundColor: '#EF4444',
       pointBorderColor: '#FFFFFF',
@@ -235,7 +221,6 @@ export default function StatisticsReports({ transactions = [] }) {
     plugins: { legend: { display: false } }
   };
 
-  // Feature B: Group Transactions by Merchant / Description for expanded category list
   const getSubcategoryBreakdown = (catId, parentAmount) => {
     const merchantMap = {};
     expenseTransactions
@@ -254,9 +239,9 @@ export default function StatisticsReports({ transactions = [] }) {
   };
 
   return (
-    <div className="space-y-6 pb-20 max-w-lg mx-auto animate-scale-in">
+    <div className="space-y-6 pb-20 animate-scale-in">
       
-      {/* Timeframe Switcher (Week, Month, Year, All) */}
+      {/* Timeframe Switcher */}
       <div className="flex bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 shadow-sm border border-slate-200/20 dark:border-slate-800/40">
         {['week', 'month', 'year', 'all'].map(t => (
           <button
@@ -290,115 +275,111 @@ export default function StatisticsReports({ transactions = [] }) {
         </div>
       )}
 
-      {/* Card A: Transaction Trend line chart */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800/40 shadow-premium relative">
-        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-350 flex items-center gap-1.5 mb-4">
-          <TrendingUp className="w-4 h-4 text-indigo-500" />
-          Transaction Trend
-        </h3>
-        <div className="h-44 w-full relative">
-          <Line data={lineChartData} options={lineChartOptions} />
-        </div>
-      </div>
-
-      {/* Expense Details header sum */}
-      <div className="flex justify-between items-center px-1 pt-2">
-        <h2 className="text-base font-black text-slate-850 dark:text-white tracking-tight">Expense Details</h2>
-        <span className="text-base font-black text-slate-850 dark:text-white tracking-tight">
-          RM {totalExpenseSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-        </span>
-      </div>
-
-      {/* Card B: Doughnut Pie chart with floating Groups button */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800/40 shadow-premium relative">
-        <div className="relative w-full aspect-square max-w-[200px] mx-auto flex items-center justify-center">
-          <Doughnut data={doughnutData} options={doughnutOptions} />
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-1">
-            <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Share Total</span>
-            <span className="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
-              {breakdownList.length} Categories
-            </span>
+      {/* Main Grid: Responsive 2 Columns Layout for line graphs & tables */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Left Column: Transaction Trend */}
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800/40 shadow-premium relative">
+            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-350 flex items-center gap-1.5 mb-4">
+              <TrendingUp className="w-4 h-4 text-indigo-500" />
+              Transaction Trend
+            </h3>
+            <div className="h-56 w-full relative">
+              <Line data={lineChartData} options={lineChartOptions} />
+            </div>
           </div>
         </div>
 
-        {/* Groups floating button */}
-        <button 
-          onClick={() => setViewMode(viewMode === 'groups' ? 'both' : 'groups')}
-          className="absolute bottom-4 right-4 bg-white dark:bg-slate-800 px-3.5 py-2 border border-slate-100 dark:border-slate-750 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl text-[10px] flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Groups</span>
-        </button>
-      </div>
+        {/* Right Column: Expense Details Chart & List */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center px-1">
+            <h2 className="text-base font-black text-slate-850 dark:text-white tracking-tight">Expense Details</h2>
+            <span className="text-base font-black text-slate-850 dark:text-white tracking-tight">
+              RM {totalExpenseSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
 
-      {/* Category Breakdown Drill-down list */}
-      <div className="space-y-3 pb-8">
-        {breakdownList.map(pt => {
-          const isExpanded = expandedCategory === pt.id;
-          const subBreakdown = isExpanded ? getSubcategoryBreakdown(pt.id, pt.amount) : [];
-          
-          return (
-            <div key={pt.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800/60 overflow-hidden shadow-sm transition-all">
-              {/* Row header */}
-              <div 
-                onClick={() => setExpandedCategory(isExpanded ? null : pt.id)}
-                className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors"
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-9 h-9 rounded-full bg-slate-50/55 dark:bg-slate-950 flex items-center justify-center text-sm border border-slate-100 dark:border-slate-800 shrink-0">
-                    {pt.emoji}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{pt.name}</h4>
-                      <span className="text-[9px] text-slate-400 font-medium">({pt.pct}%)</span>
-                    </div>
-                    <span className="text-[9px] text-slate-400 dark:text-slate-500 font-semibold block mt-0.5">
-                      {pt.txCount} trans.
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  <div className="text-right">
-                    <span className="text-xs font-black text-slate-800 dark:text-slate-205">
-                      RM {parseFloat(pt.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </span>
-                    {/* Visual Progress Line */}
-                    <div className="w-16 bg-slate-100 dark:bg-slate-950 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                      <div className="h-full rounded-full" style={{ backgroundColor: pt.color, width: `${pt.pct}%` }} />
-                    </div>
-                  </div>
-                  {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-450" /> : <ChevronDown className="w-4 h-4 text-slate-455" />}
-                </div>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800/40 shadow-premium relative">
+            <div className="relative w-full aspect-square max-w-[180px] mx-auto flex items-center justify-center">
+              <Doughnut data={doughnutData} options={doughnutOptions} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-1">
+                <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Share Total</span>
+                <span className="text-xs font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                  {breakdownList.length} Categories
+                </span>
               </div>
+            </div>
+          </div>
 
-              {/* Sub-items (Merchants) */}
-              {isExpanded && (
-                <div className="bg-slate-50/30 dark:bg-slate-950/20 px-4 py-2 border-t border-slate-50 dark:border-slate-850 divide-y divide-slate-100/50 dark:divide-slate-850/50 animate-slide-down">
-                  {subBreakdown.length === 0 ? (
-                    <div className="text-[10px] text-slate-400 italic py-2">No merchant records.</div>
-                  ) : (
-                    subBreakdown.map((sub, sidx) => (
-                      <div key={sidx} className="py-2.5 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2 min-w-0">
-                          {getMerchantLogo(sub.merchant)}
-                          <span className="text-xs font-bold text-slate-700 dark:text-slate-350 truncate">{sub.merchant}</span>
+          {/* Drill-down list */}
+          <div className="space-y-3">
+            {breakdownList.map(pt => {
+              const isExpanded = expandedCategory === pt.id;
+              const subBreakdown = isExpanded ? getSubcategoryBreakdown(pt.id, pt.amount) : [];
+              
+              return (
+                <div key={pt.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100/60 dark:border-slate-800/50 overflow-hidden shadow-sm transition-all">
+                  <div 
+                    onClick={() => setExpandedCategory(isExpanded ? null : pt.id)}
+                    className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-850/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-slate-55 dark:bg-slate-950 flex items-center justify-center text-sm border border-slate-100 dark:border-slate-800 shrink-0">
+                        {pt.emoji}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-baseline gap-1.5">
+                          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{pt.name}</h4>
+                          <span className="text-[9px] text-slate-400 font-medium">({pt.pct}%)</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-[10px] text-slate-400 font-semibold">({sub.pct}%)</span>
-                          <span className="text-xs font-black text-slate-800 dark:text-slate-200">
-                            RM {parseFloat(sub.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                          </span>
+                        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-semibold block mt-0.5">
+                          {pt.txCount} trans.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <div className="text-right">
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-205">
+                          RM {parseFloat(pt.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </span>
+                        <div className="w-16 bg-slate-100 dark:bg-slate-950 h-1 rounded-full mt-1.5 overflow-hidden">
+                          <div className="h-full rounded-full" style={{ backgroundColor: pt.color, width: `${pt.pct}%` }} />
                         </div>
                       </div>
-                    ))
+                      {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-450" /> : <ChevronDown className="w-4 h-4 text-slate-455" />}
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="bg-slate-50/30 dark:bg-slate-950/25 px-4 py-2 border-t border-slate-50 dark:border-slate-850 divide-y divide-slate-100/50 dark:divide-slate-850/50 animate-slide-down">
+                      {subBreakdown.length === 0 ? (
+                        <div className="text-[10px] text-slate-400 italic py-2">No merchant records.</div>
+                      ) : (
+                        subBreakdown.map((sub, sidx) => (
+                          <div key={sidx} className="py-2.5 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {getMerchantLogo(sub.merchant)}
+                              <span className="text-xs font-bold text-slate-700 dark:text-slate-350 truncate">{sub.merchant}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-slate-400 font-semibold">({sub.pct}%)</span>
+                              <span className="text-xs font-black text-slate-800 dark:text-slate-200 font-mono">
+                                RM {parseFloat(sub.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        </div>
+
       </div>
     </div>
   );

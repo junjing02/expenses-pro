@@ -321,7 +321,7 @@ export default function App() {
       </header>
 
       {/* Main Tab Presenter Area */}
-      <main className="max-w-md w-full mx-auto px-4 mt-8 flex-grow">
+      <main className="max-w-md lg:max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-8 flex-grow">
         <div className="space-y-6">
           
           {/* TAB 1: HOME LEDGER */}

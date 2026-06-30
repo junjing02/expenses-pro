@@ -49,7 +49,7 @@ export default function WalletList({ userId, accounts = [], onAccountAdded }) {
       setShowAddModal(false);
 
       if (onAccountAdded) {
-        onAccountAdded(); // Refresh parent state
+        onAccountAdded();
       }
     } catch (err) {
       setError(err.message);
@@ -58,10 +58,8 @@ export default function WalletList({ userId, accounts = [], onAccountAdded }) {
     }
   };
 
-  // Calculate overall total balance
   const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.current_balance || 0), 0);
 
-  // Group accounts
   const banksAndCards = accounts.filter(acc => acc.type === 'Checking' || acc.type === 'Credit Card');
   const eWallets = accounts.filter(acc => acc.type === 'E-Wallet');
   const cashWallets = accounts.filter(acc => acc.type === 'Cash');
@@ -74,7 +72,7 @@ export default function WalletList({ userId, accounts = [], onAccountAdded }) {
         <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Wallets</h1>
         <button
           onClick={() => setShowAddModal(true)}
-          className="w-9 h-9 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
+          className="w-9 h-9 rounded-full bg-indigo-650 hover:bg-indigo-600 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
         >
           <Plus className="w-5 h-5" />
         </button>
@@ -96,107 +94,118 @@ export default function WalletList({ userId, accounts = [], onAccountAdded }) {
 
       {/* Total Balance Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800/40 shadow-premium">
-        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Total Balance</span>
+        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest block">Total Balance</span>
         <h2 className="text-3xl font-black text-slate-800 dark:text-slate-105 tracking-tight mt-1.5">
           RM {totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </h2>
       </div>
 
-      {/* Group 1: Banks & Credit Cards */}
-      <div className="space-y-3">
-        <h3 className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
-          BANKS & CREDIT CARDS
-        </h3>
+      {/* Group Lists Grid (Responsive 3 columns side-by-side on desktop!) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {banksAndCards.length === 0 ? (
-          <div className="text-[11px] text-slate-400 italic pl-1 py-1">No banking accounts added.</div>
-        ) : (
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800/50 overflow-hidden divide-y divide-slate-50 dark:divide-slate-850 shadow-sm">
-            {banksAndCards.map(acc => (
-              <div key={acc.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                <div className="flex items-center gap-3.5">
-                  {getWalletLogo(acc.name)}
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">{acc.name}</h4>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-550 capitalize mt-0.5 block">
-                      {acc.type === 'Checking' ? 'Bank' : 'Credit'}
+        {/* Column 1: Banks & Credit Cards */}
+        <div className="space-y-3">
+          <h3 className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
+            BANKS & CREDIT CARDS
+          </h3>
+          
+          {banksAndCards.length === 0 ? (
+            <div className="text-[11px] text-slate-400 italic pl-1 py-4 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200/50 dark:border-slate-850/50 text-center">
+              No accounts.
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800/50 overflow-hidden divide-y divide-slate-50 dark:divide-slate-850 shadow-sm">
+              {banksAndCards.map(acc => (
+                <div key={acc.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-850/20 transition-colors">
+                  <div className="flex items-center gap-3">
+                    {getWalletLogo(acc.name)}
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{acc.name}</h4>
+                      <span className="text-[9px] text-slate-400 dark:text-slate-550 capitalize mt-0.5 block">
+                        {acc.type === 'Checking' ? 'Bank' : 'Credit'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-slate-850 dark:text-slate-205 block">
+                      RM {parseFloat(acc.current_balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                    {acc.type === 'Credit Card' && acc.credit_limit && (
+                      <span className="text-[9px] text-slate-450 block mt-0.5 font-medium">
+                        Limit: RM {parseFloat(acc.credit_limit).toFixed(0)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Column 2: E-Wallets */}
+        <div className="space-y-3">
+          <h3 className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
+            E-WALLETS
+          </h3>
+          
+          {eWallets.length === 0 ? (
+            <div className="text-[11px] text-slate-400 italic pl-1 py-4 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200/50 dark:border-slate-850/50 text-center">
+              No e-wallets.
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800/50 overflow-hidden divide-y divide-slate-50 dark:divide-slate-850 shadow-sm">
+              {eWallets.map(acc => (
+                <div key={acc.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-850/20 transition-colors">
+                  <div className="flex items-center gap-3">
+                    {getWalletLogo(acc.name)}
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{acc.name}</h4>
+                      <span className="text-[9px] text-slate-400 dark:text-slate-550 capitalize mt-0.5 block">E-Wallet</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-slate-850 dark:text-slate-205 block">
+                      RM {parseFloat(acc.current_balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-sm font-black text-slate-800 dark:text-slate-205">
-                    RM {parseFloat(acc.current_balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  </span>
-                  {acc.type === 'Credit Card' && acc.credit_limit && (
-                    <span className="text-[9px] text-slate-400 block mt-0.5 font-semibold">
-                      Limit: RM {parseFloat(acc.credit_limit).toFixed(0)}
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Column 3: Cash */}
+        <div className="space-y-3">
+          <h3 className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
+            CASH
+          </h3>
+          
+          {cashWallets.length === 0 ? (
+            <div className="text-[11px] text-slate-400 italic pl-1 py-4 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200/50 dark:border-slate-850/50 text-center">
+              No cash wallets.
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800/50 overflow-hidden divide-y divide-slate-50 dark:divide-slate-850 shadow-sm">
+              {cashWallets.map(acc => (
+                <div key={acc.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-850/20 transition-colors">
+                  <div className="flex items-center gap-3">
+                    {getWalletLogo(acc.name)}
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{acc.name}</h4>
+                      <span className="text-[9px] text-slate-400 dark:text-slate-550 capitalize mt-0.5 block">Cash</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-slate-850 dark:text-slate-205 block">
+                      RM {parseFloat(acc.current_balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Group 2: E-Wallets */}
-      <div className="space-y-3">
-        <h3 className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
-          E-WALLETS
-        </h3>
-        
-        {eWallets.length === 0 ? (
-          <div className="text-[11px] text-slate-400 italic pl-1 py-1">No e-wallet accounts added.</div>
-        ) : (
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800/50 overflow-hidden divide-y divide-slate-50 dark:divide-slate-850 shadow-sm">
-            {eWallets.map(acc => (
-              <div key={acc.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                <div className="flex items-center gap-3.5">
-                  {getWalletLogo(acc.name)}
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">{acc.name}</h4>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-550 capitalize mt-0.5 block">E-Wallet</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-sm font-black text-slate-800 dark:text-slate-205">
-                    RM {parseFloat(acc.current_balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-      {/* Group 3: Cash */}
-      <div className="space-y-3">
-        <h3 className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
-          CASH
-        </h3>
-        
-        {cashWallets.length === 0 ? (
-          <div className="text-[11px] text-slate-400 italic pl-1 py-1">No cash wallets added.</div>
-        ) : (
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800/50 overflow-hidden divide-y divide-slate-50 dark:divide-slate-850 shadow-sm">
-            {cashWallets.map(acc => (
-              <div key={acc.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                <div className="flex items-center gap-3.5">
-                  {getWalletLogo(acc.name)}
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">{acc.name}</h4>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-550 capitalize mt-0.5 block">Cash</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-black text-slate-800 dark:text-slate-205">
-                    RM {parseFloat(acc.current_balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Add Account Modal Overlay */}
@@ -206,7 +215,7 @@ export default function WalletList({ userId, accounts = [], onAccountAdded }) {
             <div className="flex justify-between items-center mb-5 pb-2 border-b border-slate-50 dark:border-slate-850">
               <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">Add Account/Wallet</h2>
               <button onClick={() => setShowAddModal(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-850">
-                <X className="w-4 h-4 text-slate-400" />
+                <X className="w-4.5 h-4.5 text-slate-400" />
               </button>
             </div>
 
