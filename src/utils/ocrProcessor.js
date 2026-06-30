@@ -168,30 +168,53 @@ function parseReceiptText(text) {
 
   // --- 4. DETECT LINE ITEMS ---
   // Heuristic: Search for lines containing an item descriptor followed by quantities and prices.
-  // Example lines: "1 Organic Bananas $2.49" or "Item ABC 12.50"
-  // Let's filter out total rows, dates, and header rows first.
-  const lineItemRegex = /^([a-zA-Z\s\-]+?)\s+(?:(\d+)\s+)?\$?(\d+\.\d{2})$/;
+  // We use 3 regex formats to maximize extraction rate:
+  // Format A: "Item Name Qty Price" or "Item Name Price" (handles Chinese characters too)
+  const formatARegex = /^([a-zA-Z\s\-\u4e00-\u9fa5]+?)\s+(?:(?:x\s*|qty\s*)?(\d+)\s+)?\$?\s*(\d+\.\d{2})$/;
+  // Format B: "Qty Item Name Price" (e.g. "2 Organic Bananas $1.99")
+  const formatBRegex = /^(?:(\d+)(?:x|qty)?\s+)?([a-zA-Z\s\-\u4e00-\u9fa5]+?)\s+\$?\s*(\d+\.\d{2})$/;
+  // Format C: "Item Name Qty @ Price" (e.g. "Coca Cola 2 @ 1.50")
+  const formatCRegex = /^([a-zA-Z\s\-\u4e00-\u9fa5]+?)\s+(\d+)\s*(?:@|at)\s*\$?\s*(\d+\.\d{2})$/;
   
   for (const line of lines) {
     // Avoid processing headers, totals, or dates as line items
-    if (totalKeywords.test(line) || dateRegex.test(line) || line.toLowerCase().includes('tax') || line.toLowerCase().includes('change')) {
+    if (totalKeywords.test(line) || dateRegex.test(line) || line.toLowerCase().includes('tax') || line.toLowerCase().includes('change') || line.toLowerCase().includes('subtotal') || line.toLowerCase().includes('balance')) {
       continue;
     }
 
-    const match = line.match(lineItemRegex);
+    let match = line.match(formatCRegex);
+    if (match) {
+      const item_name = match[1].trim();
+      const quantity = parseInt(match[2], 10);
+      const unit_price = parseFloat(match[3]);
+      const total_price = parseFloat((quantity * unit_price).toFixed(2));
+      if (item_name.length > 2 && total_price > 0 && total_price <= (totalAmount || 10000)) {
+        lineItems.push({ item_name, quantity, unit_price, total_price });
+        continue;
+      }
+    }
+
+    match = line.match(formatARegex);
     if (match) {
       const item_name = match[1].trim();
       const quantity = match[2] ? parseInt(match[2], 10) : 1;
       const total_price = parseFloat(match[3]);
       const unit_price = parseFloat((total_price / quantity).toFixed(2));
+      if (item_name.length > 2 && total_price > 0 && total_price <= (totalAmount || 10000)) {
+        lineItems.push({ item_name, quantity, unit_price, total_price });
+        continue;
+      }
+    }
 
-      if (item_name.length > 2 && total_price > 0 && total_price < totalAmount) {
-        lineItems.push({
-          item_name,
-          quantity,
-          unit_price,
-          total_price
-        });
+    match = line.match(formatBRegex);
+    if (match) {
+      const quantity = match[1] ? parseInt(match[1], 10) : 1;
+      const item_name = match[2].trim();
+      const total_price = parseFloat(match[3]);
+      const unit_price = parseFloat((total_price / quantity).toFixed(2));
+      if (item_name.length > 2 && total_price > 0 && total_price <= (totalAmount || 10000)) {
+        lineItems.push({ item_name, quantity, unit_price, total_price });
+        continue;
       }
     }
   }

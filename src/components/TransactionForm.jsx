@@ -22,7 +22,7 @@ const CATEGORIES = {
   ]
 };
 
-export default function TransactionForm({ userId, accounts, onTransactionSaved, onClose }) {
+export default function TransactionForm({ userId, accounts, budgets = [], onTransactionSaved, onClose }) {
   const [type, setType] = useState('expense'); // 'expense' or 'income'
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -56,6 +56,36 @@ export default function TransactionForm({ userId, accounts, onTransactionSaved, 
       const amountValue = parseFloat(amount);
       if (isNaN(amountValue) || amountValue <= 0) {
         throw new Error('Amount must be greater than zero.');
+      }
+
+      // Check budget limits for expenses
+      if (type === 'expense') {
+        const budget = budgets.find(b => b.category === category);
+        if (budget) {
+          const now = new Date();
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+          
+          const { data: mtdData, error: mtdError } = await supabase
+            .from('transactions')
+            .select('amount')
+            .eq('user_id', userId)
+            .eq('category', category)
+            .eq('type', 'expense')
+            .gte('transaction_date', startOfMonth);
+
+          if (!mtdError && mtdData) {
+            const mtdSpent = mtdData.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
+            const limit = budget.limit_amount;
+            const totalAfter = mtdSpent + amountValue;
+            const pct = (totalAfter / limit) * 100;
+            
+            if (pct >= 100) {
+              alert(`🔥 BUDGET EXCEEDED: Recording this transaction will push your monthly spent on "${category}" to $${totalAfter.toLocaleString('en-US', { minimumFractionDigits: 2 })} which exceeds your monthly budget limit of $${limit.toLocaleString('en-US', { minimumFractionDigits: 2 })} (Spent: ${Math.round(pct)}%).`);
+            } else if (pct >= 80) {
+              alert(`⚠️ BUDGET WARNING: Recording this transaction will push your monthly spent on "${category}" to $${totalAfter.toLocaleString('en-US', { minimumFractionDigits: 2 })} which is ${Math.round(pct)}% of your monthly budget limit of $${limit.toLocaleString('en-US', { minimumFractionDigits: 2 })}.`);
+            }
+          }
+        }
       }
 
       const { data, error: insertError } = await supabase

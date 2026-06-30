@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { processReceiptOCR } from '../utils/ocrProcessor';
 import { Upload, Camera, FileText, Loader2, CheckCircle2, AlertCircle, Plus, Trash2 } from 'lucide-react';
 
-export default function ReceiptScanner({ userId, accounts, onTransactionSaved }) {
+export default function ReceiptScanner({ userId, accounts, budgets = [], onTransactionSaved }) {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -47,7 +47,10 @@ export default function ReceiptScanner({ userId, accounts, onTransactionSaved })
     try {
       const response = await processReceiptOCR(file, (pct) => setProgress(pct));
       if (response.success) {
-        setParsedData(response.parsedData);
+        setParsedData({
+          ...response.parsedData,
+          category: 'Shopping'
+        });
         setSuccess('Receipt scanned and text processed locally!');
       } else {
         setError('Could not scan receipt. Please input values manually.');
@@ -55,6 +58,7 @@ export default function ReceiptScanner({ userId, accounts, onTransactionSaved })
           vendor: '',
           date: new Date().toISOString().split('T')[0],
           totalAmount: 0.00,
+          category: 'Shopping',
           lineItems: [{ item_name: 'Receipt Expense', quantity: 1, unit_price: 0, total_price: 0 }]
         });
       }
@@ -122,6 +126,36 @@ export default function ReceiptScanner({ userId, accounts, onTransactionSaved })
     setSuccess('');
 
     try {
+      const selectedCategory = parsedData.category || 'Shopping';
+
+      // Check budget limits for this receipt expense
+      const budget = budgets.find(b => b.category === selectedCategory);
+      if (budget) {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        
+        const { data: mtdData, error: mtdError } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('user_id', userId)
+          .eq('category', selectedCategory)
+          .eq('type', 'expense')
+          .gte('transaction_date', startOfMonth);
+
+        if (!mtdError && mtdData) {
+          const mtdSpent = mtdData.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
+          const limit = budget.limit_amount;
+          const totalAfter = mtdSpent + parsedData.totalAmount;
+          const pct = (totalAfter / limit) * 100;
+          
+          if (pct >= 100) {
+            alert(`🔥 BUDGET EXCEEDED: Recording this scanned receipt will push your monthly spent on "${selectedCategory}" to $${totalAfter.toLocaleString('en-US', { minimumFractionDigits: 2 })} which exceeds your monthly budget limit of $${limit.toLocaleString('en-US', { minimumFractionDigits: 2 })} (Spent: ${Math.round(pct)}%).`);
+          } else if (pct >= 80) {
+            alert(`⚠️ BUDGET WARNING: Recording this scanned receipt will push your monthly spent on "${selectedCategory}" to $${totalAfter.toLocaleString('en-US', { minimumFractionDigits: 2 })} which is ${Math.round(pct)}% of your monthly budget limit of $${limit.toLocaleString('en-US', { minimumFractionDigits: 2 })}.`);
+          }
+        }
+      }
+
       let receiptImageUrl = null;
 
       // 1. Upload receipt to Supabase Storage inside the private 'receipts' bucket
@@ -150,7 +184,7 @@ export default function ReceiptScanner({ userId, accounts, onTransactionSaved })
           account_id: selectedAccountId,
           type: 'expense', // Receipts are expenses
           amount: parsedData.totalAmount,
-          category: 'shopping', // Default category, user can edit
+          category: selectedCategory, // Dynamic Category selection
           description: parsedData.vendor,
           transaction_date: parsedData.date,
           receipt_image_url: receiptImageUrl
@@ -324,9 +358,31 @@ export default function ReceiptScanner({ userId, accounts, onTransactionSaved })
                 value={parsedData.date} 
                 onChange={(e) => handleDataChange('date', e.target.value)}
                 required
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-white"
               />
             </div>
+          </div>
+
+          {/* Category Selector */}
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">
+              Category
+            </label>
+            <select
+              value={parsedData.category || 'Shopping'}
+              onChange={(e) => handleDataChange('category', e.target.value)}
+              required
+              className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:text-white"
+            >
+              <option value="Eating Out">🍔 Eating Out</option>
+              <option value="Shopping">🛍️ Shopping</option>
+              <option value="Sports">⚽ Sports</option>
+              <option value="Entertainment">🍿 Entertainment</option>
+              <option value="Fuel">⛽ Fuel</option>
+              <option value="Travel">✈️ Travel</option>
+              <option value="Public Transport">🚌 Public Transport</option>
+              <option value="Other Expense">🏷️ Other Expense</option>
+            </select>
           </div>
 
           {/* Line items Section */}

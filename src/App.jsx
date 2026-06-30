@@ -22,6 +22,7 @@ export default function App() {
 
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [budgets, setBudgets] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
   
   const [darkMode, setDarkMode] = useState(false);
@@ -102,6 +103,14 @@ export default function App() {
 
       if (txError) throw txError;
       setTransactions(txData || []);
+
+      // Fetch user budgets
+      const { data: budgetsData, error: budgetError } = await supabase
+        .from('budgets')
+        .select('*');
+
+      if (budgetError) throw budgetError;
+      setBudgets(budgetsData || []);
     } catch (err) {
       console.error('Error fetching data:', err.message);
     } finally {
@@ -325,7 +334,13 @@ export default function App() {
           {/* TAB 1: DASHBOARD */}
           {currentTab === 'dashboard' && (
             <div className="animate-scale-in">
-              <Dashboard accounts={accounts} transactions={transactions} />
+              <Dashboard 
+                accounts={accounts} 
+                transactions={transactions} 
+                budgets={budgets} 
+                userId={session.user.id}
+                onBudgetUpdated={fetchUserData}
+              />
               
               {/* Desktop quick helper grid */}
               <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 hidden lg:grid">
@@ -362,6 +377,7 @@ export default function App() {
                   <TransactionForm 
                     userId={session.user.id} 
                     accounts={accounts} 
+                    budgets={budgets}
                     onTransactionSaved={fetchUserData}
                     onClose={() => setShowAddForm(false)}
                   />
@@ -382,6 +398,7 @@ export default function App() {
               <ReceiptScanner 
                 userId={session.user.id} 
                 accounts={accounts} 
+                budgets={budgets}
                 onTransactionSaved={fetchUserData} 
               />
             </div>

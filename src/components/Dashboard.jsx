@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { CATEGORIES } from './TransactionForm';
+import { supabase } from '../lib/supabaseClient';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -10,12 +11,22 @@ import {
   CategoryScale,
   LinearScale
 } from 'chart.js';
-import { Coins, ArrowUpRight, ArrowDownLeft, Landmark, PieChart, TrendingUp } from 'lucide-react';
+import { Coins, ArrowUpRight, ArrowDownLeft, Landmark, PieChart, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
-export default function Dashboard({ accounts, transactions }) {
+export default function Dashboard({ accounts, transactions, budgets = [], userId, onBudgetUpdated }) {
+  const [timeframe, setTimeframe] = useState('monthly'); // 'monthly' or 'weekly'
+  const [expandedCategory, setExpandedCategory] = useState(null);
+  
+  // Budget Form States
+  const [budgetCategory, setBudgetCategory] = useState('Eating Out');
+  const [budgetLimit, setBudgetLimit] = useState('');
+  const [budgetLoading, setBudgetLoading] = useState(false);
+  const [budgetError, setBudgetError] = useState('');
+  const [budgetSuccess, setBudgetSuccess] = useState('');
+
   // 1. Calculate Net Worth
   const netWorth = accounts.reduce((sum, acc) => sum + parseFloat(acc.current_balance || 0), 0);
 
@@ -85,8 +96,6 @@ export default function Dashboard({ accounts, transactions }) {
 
   // Check if dark mode is active
   const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-
-  const [timeframe, setTimeframe] = useState('monthly'); // 'monthly' or 'weekly'
 
   // Helper function to generate last 6 months or weeks labels and calculate sum values
   const getTrendData = () => {
@@ -225,7 +234,7 @@ export default function Dashboard({ accounts, transactions }) {
     }
   };
 
-  // Chart Data Configuration
+  // Chart Data Configuration (Doughnut)
   const defaultChartData = {
     labels: chartLabels.length > 0 ? chartLabels : ['No Expenses Recorded'],
     datasets: [{
@@ -258,11 +267,85 @@ export default function Dashboard({ accounts, transactions }) {
     }
   };
 
+  // Feature B: Group Transactions by Merchant / Description for Drill-down reports
+  const getSubcategoryBreakdown = (catId, parentAmount) => {
+    const merchantMap = {};
+    transactions
+      .filter(tx => tx.type === 'expense' && tx.category === catId)
+      .forEach(tx => {
+        const merchant = tx.description.trim() || 'Unknown Merchant';
+        merchantMap[merchant] = (merchantMap[merchant] || 0) + tx.amount;
+      });
+
+    return Object.entries(merchantMap)
+      .map(([merchant, amount]) => {
+        const pct = parentAmount > 0 ? Math.round((amount / parentAmount) * 100) : 0;
+        return { merchant, amount, pct };
+      })
+      .sort((a, b) => b.amount - a.amount);
+  };
+
+  // Feature C: Calculate current month MTD spent per category
+  const getMonthSpending = (categoryName) => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    let sum = 0;
+    transactions.forEach(tx => {
+      if (tx.type === 'expense' && tx.category === categoryName && tx.transaction_date) {
+        const txDate = new Date(tx.transaction_date);
+        if (txDate.getFullYear() === currentYear && txDate.getMonth() === currentMonth) {
+          sum += parseFloat(tx.amount || 0);
+        }
+      }
+    });
+    return sum;
+  };
+
+  // Upsert Category Budget config to Supabase
+  const handleSetBudget = async (e) => {
+    e.preventDefault();
+    if (!userId || !budgetCategory || !budgetLimit) return;
+    setBudgetLoading(true);
+    setBudgetError('');
+    setBudgetSuccess('');
+
+    try {
+      const limitVal = parseFloat(budgetLimit);
+      if (isNaN(limitVal) || limitVal < 0) {
+        throw new Error('Limit amount must be a positive number.');
+      }
+
+      const { error } = await supabase
+        .from('budgets')
+        .upsert({
+          user_id: userId,
+          category: budgetCategory,
+          limit_amount: limitVal
+        }, {
+          onConflict: 'user_id,category'
+        });
+
+      if (error) throw error;
+
+      setBudgetSuccess(`Budget limit updated for ${budgetCategory}!`);
+      setBudgetLimit('');
+      
+      if (onBudgetUpdated) {
+        onBudgetUpdated(); // refresh in App.jsx
+      }
+    } catch (err) {
+      setBudgetError(err.message);
+    } finally {
+      setBudgetLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-slide-in">
       {/* 3-Card Dashboard Scoreboard */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        
         {/* Net Worth Card */}
         <div className="md:col-span-3 lg:col-span-1 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 dark:from-slate-900 dark:to-slate-900 text-white p-6 shadow-premium relative overflow-hidden group">
           <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 text-slate-800/10 pointer-events-none transition-transform duration-500 group-hover:scale-110">
@@ -318,7 +401,7 @@ export default function Dashboard({ accounts, transactions }) {
         </div>
       </section>
 
-      {/* Analytics Category Breakdown Graph */}
+      {/* Analytics Category Breakdown Graph (Drill-Down Enabled) */}
       <section className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-premium border border-slate-100 dark:border-slate-800/40">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800/60 mb-5">
           <div>
@@ -326,7 +409,7 @@ export default function Dashboard({ accounts, transactions }) {
               <PieChart className="w-5 h-5 text-indigo-500" />
               Analytics Breakdown
             </h2>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Visual distribution of expenses</p>
+            <p className="text-xs text-slate-400 dark:text-slate-550 mt-0.5">Tap a category below to drill-down into specific merchant spending</p>
           </div>
         </div>
 
@@ -342,33 +425,61 @@ export default function Dashboard({ accounts, transactions }) {
             </div>
           </div>
 
-          {/* Interactive Legends */}
-          <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1 no-scrollbar">
-            <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Categories List</h3>
+          {/* Interactive Drill-down Legends */}
+          <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+            <h3 className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-2">Categories List</h3>
             {breakdownList.length === 0 ? (
               <div className="text-xs text-slate-400 dark:text-slate-500 py-6 text-center">
                 No expense entries to calculate distribution profiles.
               </div>
             ) : (
-              breakdownList.map(pt => (
-                <div 
-                  key={pt.id} 
-                  className="flex items-center justify-between p-2 rounded-xl border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: pt.color }}></span>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
-                      {pt.emoji} {pt.name}
-                    </span>
+              breakdownList.map(pt => {
+                const isExpanded = expandedCategory === pt.id;
+                const subBreakdown = isExpanded ? getSubcategoryBreakdown(pt.id, pt.amount) : [];
+
+                return (
+                  <div key={pt.id} className="space-y-1">
+                    <div 
+                      onClick={() => setExpandedCategory(isExpanded ? null : pt.id)}
+                      className={`flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${isExpanded ? 'bg-indigo-50/50 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/50' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: pt.color }}></span>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-350 truncate">
+                          {pt.emoji} {pt.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-bold text-slate-400">{pt.pct}%</span>
+                        <span className="text-xs font-black text-slate-700 dark:text-slate-200">
+                          ${pt.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Drill-down list */}
+                    {isExpanded && (
+                      <div className="pl-6 pr-2 py-1.5 space-y-2 border-l border-dashed border-indigo-200 dark:border-indigo-950/50 ml-3.5 animate-scale-in">
+                        {subBreakdown.length === 0 ? (
+                          <div className="text-[9px] text-slate-400 italic py-1">No merchant entries.</div>
+                        ) : (
+                          subBreakdown.map((sub, sidx) => (
+                            <div key={sidx} className="flex justify-between items-center text-[10px]">
+                              <span className="text-slate-600 dark:text-slate-450 font-medium">{sub.merchant}</span>
+                              <div className="flex items-center gap-1.5 font-bold">
+                                <span className="text-slate-400 text-[9px] font-medium">({sub.pct}%)</span>
+                                <span className="text-slate-750 dark:text-slate-300">
+                                  ${sub.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] font-bold text-slate-405">{pt.pct}%</span>
-                    <span className="text-xs font-black text-slate-700 dark:text-slate-200">
-                      ${pt.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -382,20 +493,20 @@ export default function Dashboard({ accounts, transactions }) {
               <TrendingUp className="w-5 h-5 text-indigo-500" />
               Cash Flow Trends
             </h2>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Compare monthly or weekly cash flows</p>
+            <p className="text-xs text-slate-400 dark:text-slate-505 mt-0.5">Compare monthly or weekly cash flows</p>
           </div>
 
           {/* Timeframe selector toggle */}
           <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200/30 dark:border-slate-800/30">
             <button
               onClick={() => setTimeframe('weekly')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${timeframe === 'weekly' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/10' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${timeframe === 'weekly' ? 'bg-white dark:bg-slate-900 text-indigo-650 dark:text-indigo-400 shadow-sm border border-slate-200/10' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Weekly Trend
             </button>
             <button
               onClick={() => setTimeframe('monthly')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${timeframe === 'monthly' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/10' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${timeframe === 'monthly' ? 'bg-white dark:bg-slate-900 text-indigo-650 dark:text-indigo-400 shadow-sm border border-slate-200/10' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Monthly Trend
             </button>
@@ -405,6 +516,136 @@ export default function Dashboard({ accounts, transactions }) {
         {/* Trend Bar Chart wrapper */}
         <div className="h-64 w-full relative">
           <Bar data={trendChartData} options={trendChartOptions} />
+        </div>
+      </section>
+
+      {/* Feature C: Monthly Budget Settings & Tracking */}
+      <section className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-premium border border-slate-100 dark:border-slate-800/40">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800/60 mb-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Coins className="w-5 h-5 text-indigo-500" />
+              Monthly Budgets Configuration & Tracking
+            </h2>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Define and monitor category budget thresholds</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left: Active Budgets list */}
+          <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-3">Budget Progress</h3>
+            
+            {budgets.length === 0 ? (
+              <div className="text-xs text-slate-450 dark:text-slate-550 italic py-8 text-center bg-slate-50/50 dark:bg-slate-950/20 rounded-xl border border-dashed border-slate-250/60 dark:border-slate-800/40">
+                No active budget configurations. Setup a category limit on the right.
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1 no-scrollbar">
+                {budgets.map(b => {
+                  const spent = getMonthSpending(b.category);
+                  const limit = b.limit_amount;
+                  const pct = limit > 0 ? Math.round((spent / limit) * 100) : 0;
+                  
+                  // Progress color thresholds
+                  let barColor = 'bg-emerald-500';
+                  let textColor = 'text-emerald-600 dark:text-emerald-400';
+                  let label = 'Under Budget';
+
+                  if (pct >= 100) {
+                    barColor = 'bg-rose-500';
+                    textColor = 'text-rose-600 dark:text-rose-400';
+                    label = '🔥 Over Budget';
+                  } else if (pct >= 80) {
+                    barColor = 'bg-amber-500';
+                    textColor = 'text-amber-650 dark:text-amber-400';
+                    label = '⚠️ Near Limit';
+                  }
+
+                  return (
+                    <div key={b.id} className="p-3.5 bg-slate-50/50 dark:bg-slate-950/20 rounded-xl border border-slate-100/60 dark:border-slate-850/50">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{b.category}</span>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${textColor}`}>{label}</span>
+                      </div>
+                      
+                      {/* Bar indicator */}
+                      <div className="w-full bg-slate-200/50 dark:bg-slate-950 rounded-full h-2 mb-2 overflow-hidden">
+                        <div className={`h-full ${barColor} transition-all duration-500`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                      </div>
+
+                      <div className="flex justify-between items-center text-[10px] text-slate-400 font-medium">
+                        <span>Spent: ${spent.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        <span>Limit: ${limit.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({pct}%)</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Set/Edit Budget Form */}
+          <div className="p-5 bg-slate-50/30 dark:bg-slate-950/10 border border-slate-100 dark:border-slate-850/50 rounded-2xl flex flex-col justify-start">
+            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-350 uppercase tracking-wide mb-4">
+              Configure Limit
+            </h3>
+
+            {budgetError && (
+              <div className="mb-3.5 p-2.5 bg-rose-50 dark:bg-rose-950/20 border border-rose-100/40 text-rose-600 dark:text-rose-400 rounded-xl text-[10px] flex items-center gap-1.5 font-medium">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                <span>{budgetError}</span>
+              </div>
+            )}
+            {budgetSuccess && (
+              <div className="mb-3.5 p-2.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100/40 text-emerald-600 dark:text-emerald-400 rounded-xl text-[10px] flex items-center gap-1.5 font-medium">
+                <TrendingUp className="w-3.5 h-3.5 shrink-0" />
+                <span>{budgetSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSetBudget} className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-bold text-slate-455 dark:text-slate-500 uppercase tracking-widest mb-1.5">
+                  Category
+                </label>
+                <select
+                  value={budgetCategory}
+                  onChange={(e) => setBudgetCategory(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-white"
+                >
+                  {CATEGORIES.expense.filter(c => c.id !== 'Other Expense').map(c => (
+                    <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold text-slate-455 dark:text-slate-500 uppercase tracking-widest mb-1.5">
+                  Monthly Limit (USD)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  required
+                  placeholder="0.00"
+                  value={budgetLimit}
+                  onChange={(e) => setBudgetLimit(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-white font-semibold"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={budgetLoading}
+                className="w-full py-2.5 bg-indigo-650 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition-colors disabled:opacity-50"
+              >
+                {budgetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                Save Budget
+              </button>
+            </form>
+          </div>
         </div>
       </section>
     </div>
