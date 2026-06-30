@@ -26,3 +26,6 @@ lerna-debug.log*
 Thumbs.db
 .gemini/
 .agents/
+
+# Sample folder
+sample/
