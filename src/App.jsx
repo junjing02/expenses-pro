@@ -7,10 +7,14 @@ import TransactionForm from './components/TransactionForm';
 import ReceiptScanner from './components/ReceiptScanner';
 import ImportExport from './components/ImportExport';
 import SubscriptionsManager from './components/SubscriptionsManager';
-import Dashboard from './components/Dashboard'; // Reused as budget configuration subpanel
+import GoalsManager from './components/GoalsManager';
+import BillCalendar from './components/BillCalendar';
+import FinanceInsights from './components/FinanceInsights';
+import Dashboard from './components/Dashboard'; 
 import { 
   Home, Wallet, BarChart2, Settings, Plus, X, LogOut, Moon, Sun, 
-  Loader2, RefreshCw, Mail, Lock, UserPlus, LogIn, Camera, FileText
+  Loader2, RefreshCw, Mail, Lock, UserPlus, LogIn, Camera, FileText,
+  Target, Calendar, Lightbulb, Landmark, Database, Layers
 } from 'lucide-react';
 
 export default function App() {
@@ -26,7 +30,6 @@ export default function App() {
   const [budgets, setBudgets] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
   
-  const [darkMode, setDarkMode] = useState(false);
   const [currentTab, setCurrentTab] = useState('home'); // 'home', 'wallet', 'reports', 'settings'
   const [showAddForm, setShowAddForm] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -34,7 +37,7 @@ export default function App() {
   const [showSubscriptions, setShowSubscriptions] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
 
-  // 1. Session state hook
+  // Session state hook
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -44,38 +47,24 @@ export default function App() {
       setSession(session);
     });
 
-    // Detect browser color scheme preference
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setDarkMode(isDark);
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    }
+    // Dark mode is default
+    document.documentElement.classList.add('dark');
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // 2. Fetch User Data whenever session changes
+  // Fetch User Data whenever session changes
   useEffect(() => {
     if (session?.user) {
       fetchUserData();
     }
   }, [session]);
 
-  const toggleTheme = () => {
-    setDarkMode(!darkMode);
-    if (darkMode) {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
-  };
-
   // Fetch accounts, transactions, and budgets from Supabase
   const fetchUserData = async () => {
     if (!session?.user) return;
     setDataLoading(true);
     try {
-      // Fetch user accounts
       const { data: accountsData, error: accError } = await supabase
         .from('accounts')
         .select('*')
@@ -84,7 +73,6 @@ export default function App() {
       if (accError) throw accError;
       setAccounts(accountsData || []);
 
-      // Fetch user transactions join with accounts
       const { data: txData, error: txError } = await supabase
         .from('transactions')
         .select(`
@@ -99,7 +87,6 @@ export default function App() {
       if (txError) throw txError;
       setTransactions(txData || []);
 
-      // Fetch user budgets
       const { data: budgetsData, error: budgetError } = await supabase
         .from('budgets')
         .select('*');
@@ -167,30 +154,34 @@ export default function App() {
     }
   };
 
-  // Auth Portal Render DDL
+  // Auth Portal Render
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors">
-        <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-100 dark:border-slate-800/80 shadow-2xl space-y-6">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4 transition-colors relative overflow-hidden">
+        {/* Glowing cyber backdrops */}
+        <div className="glow-blur top-10 left-10 bg-indigo-500/20"></div>
+        <div className="glow-blur bottom-10 right-10 bg-purple-500/20"></div>
+
+        <div className="cyber-card max-w-md w-full rounded-3xl p-8 border border-white/5 space-y-6 relative z-10 animate-scale-in">
           <div className="text-center">
-            <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">
-              Moneyboard <span className="text-indigo-600 dark:text-indigo-400">Pro</span>
+            <h1 className="text-3xl font-black tracking-tight text-white">
+              Moneyboard <span className="text-indigo-400 text-neon-indigo">Pro</span>
             </h1>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">
+            <p className="text-xs text-slate-400 mt-2">
               {isSignUp ? 'Create your secure developer ledger profile' : 'Sign in to access your dashboard'}
             </p>
           </div>
 
           {authError && (
-            <div className="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40 rounded-xl text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
+            <div className="p-3.5 bg-rose-950/20 border border-rose-900/40 rounded-2xl text-rose-400 text-xs flex items-center gap-2">
+              <X className="w-4 h-4 text-rose-500" />
               <span>{authError}</span>
             </div>
           )}
 
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">
+              <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
                 Email Address
               </label>
               <div className="relative">
@@ -203,13 +194,13 @@ export default function App() {
                   placeholder="junjingting@gmail.com"
                   value={authEmail}
                   onChange={(e) => setAuthEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-250 dark:border-slate-800 rounded-2xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-white/5 rounded-2xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-white"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">
+              <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
                 Secure Password
               </label>
               <div className="relative">
@@ -222,7 +213,7 @@ export default function App() {
                   placeholder="••••••••"
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-250 dark:border-slate-800 rounded-2xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-white/5 rounded-2xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-white"
                 />
               </div>
             </div>
@@ -251,7 +242,7 @@ export default function App() {
           <div className="text-center pt-2">
             <button
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold text-xs"
+              className="text-indigo-400 hover:underline font-semibold text-xs"
             >
               {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up Now'}
             </button>
@@ -261,7 +252,7 @@ export default function App() {
     );
   }
 
-  // Navigation Items
+  // Mobile Bottom Tab Items
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'wallet', label: 'Wallet', icon: Wallet },
@@ -270,20 +261,25 @@ export default function App() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen pb-28 lg:pb-8 bg-slate-50 dark:bg-slate-950 transition-colors">
-      {/* Header (Branding & Desktop Menu) */}
-      <header className="py-4 px-4 sm:px-6 lg:px-8 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/75 dark:bg-slate-900/60 backdrop-blur-md sticky top-0 z-30 transition-colors">
-        <div className="max-w-6xl w-full mx-auto flex items-center justify-between">
+    <div className="min-h-screen pb-28 lg:pb-12 bg-slate-950 text-slate-100 transition-colors relative overflow-hidden">
+      
+      {/* Background radial neon glows */}
+      <div className="glow-blur top-0 right-1/4 bg-indigo-500/10"></div>
+      <div className="glow-blur bottom-0 left-1/4 bg-violet-500/10"></div>
+
+      {/* Header bar */}
+      <header className="py-4 px-4 sm:px-6 lg:px-8 border-b border-white/5 bg-slate-900/50 backdrop-blur-md sticky top-0 z-30">
+        <div className="max-w-7xl w-full mx-auto flex items-center justify-between">
           
-          {/* Brand Logo */}
+          {/* Brand logo */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentTab('home')}>
-            <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-indigo-600 to-violet-500 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
-              Moneyboard
+            <span className="font-black text-xl tracking-tight bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent text-neon-indigo">
+              Moneyboard Pro
             </span>
           </div>
 
-          {/* Desktop Navigation Menu (hidden on mobile) */}
-          <nav className="hidden lg:flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200/20 dark:border-slate-800/20">
+          {/* Desktop tab menus */}
+          <nav className="hidden lg:flex items-center gap-1.5 p-1 bg-slate-900 border border-white/5 rounded-2xl">
             {navItems.map(item => {
               const Icon = item.icon;
               const active = currentTab === item.id;
@@ -294,13 +290,13 @@ export default function App() {
                     setCurrentTab(item.id);
                     setShowSubscriptions(false);
                   }}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
                     active 
-                      ? 'bg-white dark:bg-slate-900 text-indigo-650 dark:text-indigo-400 shadow-sm border border-slate-200/10' 
-                      : 'text-slate-500 hover:text-slate-850 dark:hover:text-slate-250'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-650/20' 
+                      : 'text-slate-400 hover:text-slate-100'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
                 </button>
               );
@@ -308,26 +304,19 @@ export default function App() {
           </nav>
 
           {/* Right Header Utilities */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button 
               onClick={fetchUserData}
               disabled={dataLoading}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500"
+              className="p-2.5 rounded-xl border border-white/5 bg-slate-900/40 hover:bg-slate-900 transition-colors text-slate-400 hover:text-slate-100"
               title="Refresh Data"
             >
               <RefreshCw className={`w-4 h-4 ${dataLoading ? 'animate-spin' : ''}`} />
             </button>
 
             <button 
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500"
-            >
-              {darkMode ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            <button 
               onClick={handleSignOut}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:border-rose-100 dark:hover:border-rose-900/40 text-slate-500 hover:text-rose-600 transition-colors"
+              className="p-2.5 rounded-xl border border-white/5 bg-slate-900/40 hover:bg-rose-950/20 text-slate-450 hover:text-rose-400 transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -336,30 +325,104 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Tab Presenter Area */}
-      <main className="max-w-md lg:max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-8 flex-grow">
-        <div className="space-y-6">
+      {/* Main Workspace Presenter */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 relative z-10">
+        
+        {/* Onboarding Empty State banner */}
+        {accounts.length === 0 && transactions.length === 0 && (
+          <div className="cyber-card rounded-3xl p-6 text-center space-y-4 max-w-2xl mx-auto mb-8 animate-scale-in">
+            <span className="text-3xl block">👋</span>
+            <h3 className="text-base font-black text-white text-neon-indigo">Welcome to Moneyboard Pro Sandbox!</h3>
+            <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              Your database ledger is currently empty. Click the button below to instantly populate your dashboard with realistic Malaysian bank accounts, credit cards, transactions, and savings goals.
+            </p>
+            <button
+              onClick={handlePopulateDemo}
+              disabled={demoLoading}
+              className="px-5 py-2.5 bg-indigo-650 hover:bg-indigo-600 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-650/15 transition-all flex items-center justify-center gap-1.5 mx-auto"
+            >
+              {demoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '📊 Populate Demo Sandbox'}
+            </button>
+          </div>
+        )}
+
+        {/* 1. DESKTOP WORKSPACE (Futuristic Command Grid - Side by Side!) */}
+        <div className="hidden lg:grid grid-cols-12 gap-6 items-start">
           
-          {/* TAB 1: HOME LEDGER */}
+          {/* Left Column (Colspan-3): Wallets Scorecards & Savings Targets */}
+          <div className="col-span-3 space-y-6">
+            <WalletList 
+              userId={session.user.id} 
+              accounts={accounts} 
+              onAccountAdded={fetchUserData} 
+            />
+          </div>
+
+          {/* Center Column (Colspan-6): Trend Charts & Grouped Ledger timeline */}
+          <div className="col-span-6 space-y-6">
+            
+            {/* Top Quick Actions Panel */}
+            <div className="cyber-card p-4 rounded-3xl flex justify-around items-center">
+              <span className="text-xs font-bold text-slate-350 tracking-wide">Ledger Controls:</span>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-550 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Manual Transaction</span>
+                </button>
+                <button
+                  onClick={() => setShowScanner(true)}
+                  className="px-4 py-2 bg-slate-900 border border-white/5 text-slate-200 hover:bg-slate-850 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                >
+                  <Camera className="w-4 h-4 text-indigo-400" />
+                  <span>Scan Receipt OCR</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Statistics chart */}
+            <StatisticsReports 
+              transactions={transactions} 
+            />
+
+            {/* Daily timeline ledger */}
+            <HomeLedger 
+              userId={session.user.id} 
+              accounts={accounts} 
+              transactions={transactions} 
+              onTransactionDeleted={fetchUserData} 
+            />
+          </div>
+
+          {/* Right Column (Colspan-3): Subscriptions Reminders & Budgets config */}
+          <div className="col-span-3 space-y-6">
+            
+            {/* Budgets threshold checker */}
+            <Dashboard 
+              accounts={accounts} 
+              transactions={transactions} 
+              budgets={budgets} 
+              userId={session.user.id}
+              onBudgetUpdated={fetchUserData}
+            />
+
+            {/* CSV Backup files manager */}
+            <ImportExport 
+              userId={session.user.id} 
+              accounts={accounts} 
+              transactions={transactions}
+              onDataImported={fetchUserData} 
+            />
+          </div>
+
+        </div>
+
+        {/* 2. MOBILE WORKSPACE (Standard tab filtering slide) */}
+        <div className="lg:hidden space-y-6">
           {currentTab === 'home' && (
             <div className="space-y-6">
-              {accounts.length === 0 && transactions.length === 0 && (
-                <div className="bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-200/30 dark:border-indigo-900/20 rounded-3xl p-6 text-center space-y-4 animate-scale-in">
-                  <span className="text-3xl block">👋</span>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Welcome to Moneyboard Pro Sandbox!</h3>
-                  <p className="text-xs text-slate-450 dark:text-slate-500 max-w-sm mx-auto leading-relaxed">
-                    Your ledger is currently empty. Click the button below to instantly populate your dashboard with realistic Malaysian demo data (wallets, transactions, budget limits, and savings goals) to see the app in action!
-                  </p>
-                  <button
-                    onClick={handlePopulateDemo}
-                    disabled={demoLoading}
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-550 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-650/15 transition-all flex items-center justify-center gap-1.5 mx-auto"
-                  >
-                    {demoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '📊 Populate Demo Sandbox'}
-                  </button>
-                </div>
-              )}
-
               <HomeLedger 
                 userId={session.user.id} 
                 accounts={accounts} 
@@ -369,7 +432,6 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 2: WALLETS */}
           {currentTab === 'wallet' && (
             <WalletList 
               userId={session.user.id} 
@@ -378,16 +440,14 @@ export default function App() {
             />
           )}
 
-          {/* TAB 3: REPORTS / STATISTICS */}
           {currentTab === 'reports' && (
             <StatisticsReports 
               transactions={transactions} 
             />
           )}
 
-          {/* TAB 4: SETTINGS & SUBPANELS */}
           {currentTab === 'settings' && (
-            <div className="space-y-6 animate-scale-in">
+            <div className="space-y-6">
               {showSubscriptions ? (
                 <SubscriptionsManager 
                   userId={session.user.id} 
@@ -396,26 +456,20 @@ export default function App() {
                 />
               ) : (
                 <>
-                  <div className="flex flex-col gap-4">
-                    <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Settings</h2>
-                    
-                    {/* Recurring Subscriptions Link Button */}
-                    <button
-                      onClick={() => setShowSubscriptions(true)}
-                      className="w-full p-4 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl text-left flex justify-between items-center shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">🗓️</span>
-                        <div>
-                          <h4 className="text-xs font-extrabold text-slate-750 dark:text-slate-105">Recurring & Subscriptions</h4>
-                          <p className="text-[10px] text-slate-400 mt-0.5">Manage fixed bills, loans, and music configs</p>
-                        </div>
+                  <button
+                    onClick={() => setShowSubscriptions(true)}
+                    className="w-full p-4 bg-slate-900 border border-white/5 rounded-3xl text-left flex justify-between items-center shadow-sm hover:bg-slate-850 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">🗓️</span>
+                      <div>
+                        <h4 className="text-xs font-bold text-white">Recurring & Subscriptions</h4>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Manage fixed bills, loans, and music configs</p>
                       </div>
-                      <span className="text-slate-400 text-xs font-bold font-mono">→</span>
-                    </button>
-                  </div>
+                    </div>
+                    <span className="text-slate-400 text-xs font-bold">→</span>
+                  </button>
 
-                  {/* Budgets Management section */}
                   <Dashboard 
                     accounts={accounts} 
                     transactions={transactions} 
@@ -424,7 +478,6 @@ export default function App() {
                     onBudgetUpdated={fetchUserData}
                   />
 
-                  {/* CSV Backups section */}
                   <ImportExport 
                     userId={session.user.id} 
                     accounts={accounts} 
@@ -435,13 +488,13 @@ export default function App() {
               )}
             </div>
           )}
-
         </div>
-      </main>
 
-      {/* Floating Bottom Tab Bar (Mobile/Tablet View - match 1.png / 5.png exactly!) */}
-      <div className="lg:hidden fixed bottom-6 left-4 right-4 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border border-slate-200/50 dark:border-slate-800/80 rounded-3xl py-2.5 px-4 shadow-xl flex items-center justify-between">
-        {/* Left two nav items: Home, Wallet */}
+      </div>
+
+      {/* Floating Bottom Tab Bar (Mobile/Tablet View only - glass-dock styling!) */}
+      <div className="lg:hidden fixed bottom-6 left-4 right-4 z-40 glass-dock rounded-3xl py-2.5 px-4 flex items-center justify-between">
+        {/* Left two tabs */}
         <div className="flex justify-around items-center w-2/5">
           {navItems.slice(0, 2).map(item => {
             const Icon = item.icon;
@@ -453,7 +506,7 @@ export default function App() {
                   setCurrentTab(item.id);
                   setShowSubscriptions(false);
                 }}
-                className={`flex flex-col items-center gap-1 transition-all ${active ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+                className={`flex flex-col items-center gap-1 transition-all ${active ? 'text-indigo-400 text-neon-indigo' : 'text-slate-400'}`}
               >
                 <Icon className="w-5 h-5" />
                 <span className="text-[9px] font-black">{item.label}</span>
@@ -462,7 +515,7 @@ export default function App() {
           })}
         </div>
 
-        {/* Central blue FAB button */}
+        {/* Central quick action trigger */}
         <button
           onClick={() => setShowFabMenu(true)}
           className="w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-550 text-white flex items-center justify-center shadow-lg transform -translate-y-4 shadow-indigo-650/30 z-50 transition-transform active:scale-95"
@@ -470,7 +523,7 @@ export default function App() {
           <Plus className="w-6 h-6" />
         </button>
 
-        {/* Right two nav items: Report, Settings */}
+        {/* Right two tabs */}
         <div className="flex justify-around items-center w-2/5">
           {navItems.slice(2, 4).map(item => {
             const Icon = item.icon;
@@ -482,7 +535,7 @@ export default function App() {
                   setCurrentTab(item.id);
                   if (item.id !== 'settings') setShowSubscriptions(false);
                 }}
-                className={`flex flex-col items-center gap-1 transition-all ${active ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+                className={`flex flex-col items-center gap-1 transition-all ${active ? 'text-indigo-400 text-neon-indigo' : 'text-slate-400'}`}
               >
                 <Icon className="w-5 h-5" />
                 <span className="text-[9px] font-black">{item.label}</span>
@@ -494,38 +547,36 @@ export default function App() {
 
       {/* MODAL 1: FAB Options Menu Modal overlay */}
       {showFabMenu && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end justify-center" onClick={() => setShowFabMenu(false)}>
-          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-t-3xl p-6 shadow-2xl border-t border-slate-100 dark:border-slate-800 animate-slide-up" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-50 dark:border-slate-850">
-              <h2 className="text-sm font-bold text-slate-850 dark:text-white">Record Transaction</h2>
-              <button onClick={() => setShowFabMenu(false)} className="p-1 rounded-lg hover:bg-slate-100">
-                <X className="w-4.5 h-4.5 text-slate-400" />
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end justify-center" onClick={() => setShowFabMenu(false)}>
+          <div className="bg-slate-900 w-full max-w-sm rounded-t-3xl p-6 shadow-2xl border-t border-white/5 animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-white/5">
+              <h2 className="text-sm font-bold text-white">Record Transaction</h2>
+              <button onClick={() => setShowFabMenu(false)} className="p-1 rounded-lg hover:bg-slate-800">
+                <X className="w-4.5 h-4.5 text-slate-450" />
               </button>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              {/* Scan Receipt */}
               <button
                 onClick={() => {
                   setShowFabMenu(false);
                   setShowScanner(true);
                 }}
-                className="p-5 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl text-center hover:scale-[1.03] transition-all flex flex-col items-center gap-2"
+                className="p-5 bg-indigo-950/20 border border-indigo-900/40 rounded-2xl text-center hover:scale-[1.03] transition-all flex flex-col items-center gap-2"
               >
-                <Camera className="w-7 h-7 text-indigo-600" />
-                <span className="text-xs font-black text-indigo-750 dark:text-indigo-400">Scan Receipt</span>
+                <Camera className="w-7 h-7 text-indigo-400" />
+                <span className="text-xs font-black text-indigo-300">Scan Receipt</span>
               </button>
 
-              {/* Manual entry */}
               <button
                 onClick={() => {
                   setShowFabMenu(false);
                   setShowAddForm(true);
                 }}
-                className="p-5 bg-violet-50/50 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/40 rounded-2xl text-center hover:scale-[1.03] transition-all flex flex-col items-center gap-2"
+                className="p-5 bg-purple-950/20 border border-purple-900/40 rounded-2xl text-center hover:scale-[1.03] transition-all flex flex-col items-center gap-2"
               >
-                <FileText className="w-7 h-7 text-violet-600" />
-                <span className="text-xs font-black text-violet-750 dark:text-violet-400">Manual Entry</span>
+                <FileText className="w-7 h-7 text-purple-400" />
+                <span className="text-xs font-black text-purple-300">Manual Entry</span>
               </button>
             </div>
           </div>
@@ -534,10 +585,10 @@ export default function App() {
 
       {/* MODAL 2: Manual Add Form Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-5 shadow-2xl relative border border-slate-100 dark:border-slate-800 animate-scale-in">
-            <button onClick={() => setShowAddForm(false)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 z-10">
-              <X className="w-4.5 h-4.5 text-slate-400" />
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 w-full max-w-md rounded-3xl p-5 shadow-2xl relative border border-white/5 animate-scale-in">
+            <button onClick={() => setShowAddForm(false)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-800 z-10">
+              <X className="w-4.5 h-4.5 text-slate-450" />
             </button>
             <div className="mt-2">
               <TransactionForm 
@@ -554,10 +605,10 @@ export default function App() {
 
       {/* MODAL 3: OCR Scanner Modal */}
       {showScanner && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl p-5 shadow-2xl relative border border-slate-100 dark:border-slate-800 animate-scale-in">
-            <button onClick={() => setShowScanner(false)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 z-10">
-              <X className="w-4.5 h-4.5 text-slate-400" />
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 w-full max-w-lg rounded-3xl p-5 shadow-2xl relative border border-white/5 animate-scale-in">
+            <button onClick={() => setShowScanner(false)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-800 z-10">
+              <X className="w-4.5 h-4.5 text-slate-450" />
             </button>
             <div className="mt-2 max-h-[80vh] overflow-y-auto no-scrollbar">
               <ReceiptScanner 

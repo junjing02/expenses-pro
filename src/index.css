@@ -5,7 +5,7 @@
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    @apply bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-300;
+    @apply bg-slate-950 text-slate-100 min-h-screen transition-colors duration-300 antialiased selection:bg-indigo-500/30 selection:text-indigo-200;
   }
 }
 
@@ -14,87 +14,137 @@
   display: none;
 }
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Premium Card Shadows */
-.shadow-premium {
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.03), 0 4px 12px -4px rgba(0, 0, 0, 0.02);
-}
-.dark .shadow-premium {
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 8px 16px -8px rgba(0, 0, 0, 0.2);
-}
-
-/* Card Hover Glow Micro-lifts */
-.hover-glow {
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.hover-glow:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 20px 35px -5px rgba(99, 102, 241, 0.05), 0 8px 15px -8px rgba(99, 102, 241, 0.05);
-}
-.dark .hover-glow:hover {
-  box-shadow: 0 25px 45px -10px rgba(99, 102, 241, 0.15), 0 10px 20px -10px rgba(99, 102, 241, 0.1);
-}
-
-/* Glassmorphism Classes */
-.glassmorphism {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-.dark .glassmorphism {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-/* Blur Backdrop */
-.modal-backdrop-blur {
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-/* Animation Keyframes */
-@keyframes scaleIn {
-  from { transform: scale(0.96); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-@keyframes slideIn {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes toastIn {
-  from { transform: translateY(25px) scale(0.92); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-/* Animation Utilities */
-.animate-scale-in {
-  animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-slide-in {
-  animation: slideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-toast-in {
-  animation: toastIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
-}
-
-/* Smooth transition for ledger items */
-.ledger-item {
+/* Glassmorphic Cyber Card Styles */
+.cyber-card {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), 0 5px 15px -5px rgba(0, 0, 0, 0.3);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ledger-item:hover {
-  transform: translateX(5px);
-  background-color: rgba(248, 250, 252, 0.8);
+.cyber-card:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.08), 0 5px 15px -5px rgba(0, 0, 0, 0.4);
 }
-.dark .ledger-item:hover {
-  background-color: rgba(30, 41, 59, 0.4);
+
+/* Glowing Neon Text & Effects */
+.text-neon-indigo {
+  text-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+}
+.text-neon-emerald {
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+.text-neon-rose {
+  text-shadow: 0 0 12px rgba(244, 63, 94, 0.4);
+}
+
+/* Glow Background Gradients */
+.glow-blur {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 70%);
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Custom Scrollbars for lists */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.3);
+}
+
+/* Smooth transformations for list rows */
+.cyber-item {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cyber-item:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Glass Floating Menus */
+.glass-dock {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -10px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Animation Keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Global Cyber Theme Overrides */
+.bg-white, .bg-slate-50, .bg-slate-100 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: #F8FAFC !important;
+}
+
+.dark .bg-white, .dark .bg-slate-900, .dark .bg-slate-950 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  color: #F8FAFC !important;
+}
+
+/* Override borders */
+.border-slate-100, .border-slate-200, .border-slate-200\/60, .border-slate-200\/50, .border-slate-250, .border-slate-800, .border-slate-800\/40, .border-slate-800\/50, .border-slate-850 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Hover lists and input forms */
+input, select {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+input:focus, select:focus {
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Adjust slate text colors for dark-glass contrast */
+.text-slate-800, .text-slate-700, .text-slate-850, .text-slate-750 {
+  color: #E2E8F0 !important;
+}
+
+.text-slate-400, .text-slate-500, .text-slate-550, .text-slate-450 {
+  color: #94A3B8 !important;
+}
+
+/* Daily transaction ledger elements hover */
+.ledger-item:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  transform: translateX(4px);
 }
