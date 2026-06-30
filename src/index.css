@@ -101,7 +101,7 @@
 }
 
 /* Global Cyber Theme Overrides */
-.bg-white, .bg-slate-50, .bg-slate-100 {
+.bg-white, .bg-slate-100 {
   background-color: rgba(15, 23, 42, 0.45) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -109,7 +109,7 @@
   color: #F8FAFC !important;
 }
 
-.dark .bg-white, .dark .bg-slate-900, .dark .bg-slate-950 {
+.dark .bg-white, .dark .bg-slate-900 {
   background-color: rgba(15, 23, 42, 0.45) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
