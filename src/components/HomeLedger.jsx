@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { CATEGORIES } from './TransactionForm';
+import FinanceInsights from './FinanceInsights';
+import BillCalendar from './BillCalendar';
 
 export default function HomeLedger({ userId, accounts = [], transactions = [], onTransactionDeleted }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -233,7 +235,6 @@ export default function HomeLedger({ userId, accounts = [], transactions = [], o
                 </div>
               ))
             )}
-          </div>
         </div>
 
         {/* Right Side: Sticky balance MTD cards (1 col on large screens) */}
@@ -241,7 +242,7 @@ export default function HomeLedger({ userId, accounts = [], transactions = [], o
           {/* Balance card */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800/40 shadow-premium space-y-4">
             <div>
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">BALANCE</span>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest block">BALANCE</span>
               <h2 className={`text-2xl font-black tracking-tight mt-1 ${currentBalance < 0 ? 'text-rose-650 dark:text-rose-400' : 'text-slate-850 dark:text-slate-100'}`}>
                 {formatCurrency(currentBalance)}
               </h2>
@@ -272,7 +273,13 @@ export default function HomeLedger({ userId, accounts = [], transactions = [], o
               </div>
             </div>
           </div>
-        </div>
+
+          {/* Finance Insights */}
+          <FinanceInsights transactions={transactions} />
+
+          {/* Bill Calendar */}
+          <BillCalendar userId={userId} accounts={accounts} />
+        </div>     </div>
 
       </div>
     </div>

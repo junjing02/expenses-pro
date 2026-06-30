@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { getWalletLogo } from '../utils/logoHelper';
 import { Plus, X, Landmark, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import GoalsManager from './GoalsManager';
 
 export default function WalletList({ userId, accounts = [], onAccountAdded }) {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -207,6 +208,9 @@ export default function WalletList({ userId, accounts = [], onAccountAdded }) {
         </div>
 
       </div>
+
+      {/* Savings Goals Tracker */}
+      <GoalsManager userId={userId} accounts={accounts} onGoalUpdated={onAccountAdded} />
 
       {/* Add Account Modal Overlay */}
       {showAddModal && (

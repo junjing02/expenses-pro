@@ -34,11 +34,15 @@ expenses-pro/
 ├── supabase/
 │   ├── schema.sql              # Complete Supabase SQL scripts (core tables, balance updates trigger, and RLS)
 │   ├── budgets.sql             # Incremental SQL migration for budgets table configuration
-│   └── subscriptions.sql       # Incremental SQL migration for recurring subscriptions table
+│   ├── subscriptions.sql       # Incremental SQL migration for recurring subscriptions table
+│   └── goals.sql               # Incremental SQL migration for savings goals tracking
 ├── src/
 │   ├── components/
-│   │   ├── HomeLedger.jsx      # Daily-grouped transaction ledger with search filters & monthly paginations
-│   │   ├── WalletList.jsx      # Multi-column portfolio display grouping Banks, Credit Cards, E-Wallets, & Cash
+│   │   ├── HomeLedger.jsx      # Daily-grouped transaction ledger, sticky MTD statistics, insights, and calendar
+│   │   ├── WalletList.jsx      # Portfolio grouping for banks, e-wallets, cash, and active savings goals
+│   │   ├── GoalsManager.jsx    # Savings targets configuration progress bar metrics & deposit allocations
+│   │   ├── FinanceInsights.jsx # Automated daily burn rate calculator and top expense spikes indicator
+│   │   ├── BillCalendar.jsx    # Scheduled bills countdown reminder log feed
 │   │   ├── StatisticsReports.jsx # Trend line charts, pie charts, and category merchant drill-downs
 │   │   ├── SubscriptionsManager.jsx # Recurring bills tracker and monthly cost aggregator
 │   │   ├── TransactionForm.jsx # Manual income/expense entry form with budget limit checks
@@ -63,7 +67,7 @@ expenses-pro/
 1. Create a free project on [Supabase.com](https://supabase.com).
 2. Open the **SQL Editor** from your project sidebar.
 3. Paste and run the contents of [supabase/schema.sql](file:///Users/ting/Documents/Antigravity/expenses-pro/supabase/schema.sql) first.
-4. Next, paste and run [supabase/budgets.sql](file:///Users/ting/Documents/Antigravity/expenses-pro/supabase/budgets.sql) and [supabase/subscriptions.sql](file:///Users/ting/Documents/Antigravity/expenses-pro/supabase/subscriptions.sql) to add the budget and recurring payment tables.
+4. Next, paste and run [supabase/budgets.sql](file:///Users/ting/Documents/Antigravity/expenses-pro/supabase/budgets.sql), [supabase/subscriptions.sql](file:///Users/ting/Documents/Antigravity/expenses-pro/supabase/subscriptions.sql), and [supabase/goals.sql](file:///Users/ting/Documents/Antigravity/expenses-pro/supabase/goals.sql) to add the budgets, subscriptions, and savings goals tables.
    * *This will generate your tables, establish the balance update trigger, enable RLS, configure your storage buckets, and apply security policies.*
 
 ### 2. Local Environment Setup
