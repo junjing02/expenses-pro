@@ -1,16 +1,20 @@
-# ApexLedger — Serverless Personal Finance Tracker & OCR Receipt Scanner
+# Moneyboard Pro — Serverless Personal Finance Tracker & OCR Receipt Scanner
 
-A serverless, zero-cost-host personal finance tracker with client-side OCR receipt scanning capabilities. This starter project is built on **React.js (Vite)**, styled using **Tailwind CSS**, and integrates directly with **Supabase (PostgreSQL, Auth, & Storage)**, completely eliminating the need for a custom API server.
+A serverless, zero-cost-host personal finance tracker with client-side OCR receipt scanning capabilities. This project is built on **React.js (Vite)**, styled using **Tailwind CSS**, and integrates directly with **Supabase (PostgreSQL, Auth, & Storage)**, completely eliminating the need for a custom API server.
 
 ---
 
 ## 🚀 Key Features
 
-1. **Transaction & Account CRUD**: Real-time checking, savings, credit cards, and investments tracking.
-2. **Client-Side OCR Scanning**: Local browser-based receipt processing utilizing **Tesseract.js** to parse date, vendor, total price, and line items, saving compute resources and costs.
-3. **Database Synchronizations**: Auto-calculating account balances utilizing PostgreSQL trigger functions on transaction updates, insertions, and deletions.
-4. **Row-Level Security (RLS)**: Fine-grained security policies on all PostgreSQL tables and Supabase Storage Objects, ensuring data is accessible only by the authenticated owner.
-5. **Private Receipt Storage**: Receipts uploaded to a secure private storage bucket, fetched securely on-demand via time-limited signed URLs.
+1. **Grouped Ledger & Balance Cards**: A daily-grouped transaction timeline (with search and monthly pagination) displaying MTD balance summaries.
+2. **Interactive Reports & Merchant Drill-Downs**: A statistics dashboard featuring timeframe switcher filters (Week, Month, Year, All), daily trend line charts, and category pie charts. Tapping any category expands a list of transactions aggregated by specific merchants (e.g. Lazada, Shopee, PDD) with relative percentages.
+3. **Monthly Budget Configuration & Real-time Alerts**: Custom monthly budget thresholds. It triggers warnings (at 80% limit warnings) or alerts (at 100% budget exceedance) client-side before transactions are saved.
+4. **Recurring Payments & Subscriptions**: Track fixed bills, loans, and media memberships (e.g. Spotify, House Loan) linked to payment methods with automatic monthly costs aggregation.
+5. **Malaysian Banks & E-Wallets Support**: Dynamic icon mapping and logo assets supporting Maybank, CIMB, Touch 'n Go (TnG) eWallet, and Cash.
+6. **Client-Side OCR Scanning**: Local browser-based receipt processing utilizing **Tesseract.js** to parse date, vendor, total price, and line items. Review line items before saving and batch-insert them into the database.
+7. **Database Synchronizations**: Auto-calculating account balances utilizing PostgreSQL trigger functions on transaction updates, insertions, and deletions.
+8. **Row-Level Security (RLS)**: Fine-grained security policies on all PostgreSQL tables and Supabase Storage Objects, ensuring data is accessible only by the authenticated owner.
+9. **Private Receipt Storage**: Receipts uploaded to a secure private storage bucket, fetched securely on-demand via time-limited signed URLs.
 
 ---
 
@@ -28,27 +32,27 @@ A serverless, zero-cost-host personal finance tracker with client-side OCR recei
 ```
 expenses-pro/
 ├── supabase/
-│   └── schema.sql          # Complete Supabase SQL scripts (tables, keys, trigger, and RLS)
+│   ├── schema.sql              # Complete Supabase SQL scripts (core tables, balance updates trigger, and RLS)
+│   ├── budgets.sql             # Incremental SQL migration for budgets table configuration
+│   └── subscriptions.sql       # Incremental SQL migration for recurring subscriptions table
 ├── src/
 │   ├── components/
-│   │   ├── AccountCard.jsx     # Card component for account management
-│   │   ├── Dashboard.jsx       # Financial scorecard & category charts
-│   │   ├── ReceiptScanner.jsx  # Drag-and-drop OCR and Supabase storage coordinator
-│   │   ├── TransactionList.jsx # Transaction ledger with filters, search, and sorting
-│   │   └── TransactionForm.jsx # Manual income/expense entry form
+│   │   ├── HomeLedger.jsx      # Daily-grouped transaction ledger with search filters & monthly paginations
+│   │   ├── WalletList.jsx      # Multi-column portfolio display grouping Banks, Credit Cards, E-Wallets, & Cash
+│   │   ├── StatisticsReports.jsx # Trend line charts, pie charts, and category merchant drill-downs
+│   │   ├── SubscriptionsManager.jsx # Recurring bills tracker and monthly cost aggregator
+│   │   ├── TransactionForm.jsx # Manual income/expense entry form with budget limit checks
+│   │   ├── ReceiptScanner.jsx  # Drag-and-drop OCR reviewer, line-items table editor, & budget limits checking
+│   │   ├── Dashboard.jsx       # Reused budget threshold configuration card
+│   │   └── ImportExport.jsx    # CSV backups management, database reset commands, and Moneyboard CSV parser
 │   ├── lib/
-│   │   └── supabaseClient.js   # Supabase client instance config
+│   │   └── supabaseClient.js   # Supabase client instance configuration
 │   ├── utils/
-│   │   └── ocrProcessor.js     # Tesseract.js wrapper & regexp receipt parsing heuristics
-│   ├── App.jsx                 # User authentication router & main UI container
-│   ├── index.css               # Global styling, transitions, and glassmorphism helpers
+│   │   ├── ocrProcessor.js     # Tesseract.js OCR engine wrapper & multi-format item extraction regexp heuristics
+│   │   └── logoHelper.jsx      # Vector logo and emoji mapper utility for Malaysian banks, e-wallets, & merchants
+│   ├── App.jsx                 # User auth portal, viewport container, and modal handlers
+│   ├── index.css               # Global styling, keyframes, transitions, and glassmorphism helpers
 │   └── main.jsx                # React mount entry
-├── .env.example            # Environment variables template
-├── package.json            # Node project configuration
-├── tailwind.config.js      # Tailwind configurations
-├── postcss.config.js       # PostCSS config
-├── vite.config.js          # Vite plugins & configuration
-└── index.html              # Vite entry page
 ```
 
 ---
@@ -58,7 +62,8 @@ expenses-pro/
 ### 1. Database & Storage Configuration (Supabase)
 1. Create a free project on [Supabase.com](https://supabase.com).
 2. Open the **SQL Editor** from your project sidebar.
-3. Paste the contents of [supabase/schema.sql](file:///Users/ting/Documents/Antigravity/expenses-pro/supabase/schema.sql) and click **Run**.
+3. Paste and run the contents of [supabase/schema.sql](file:///Users/ting/Documents/Antigravity/expenses-pro/supabase/schema.sql) first.
+4. Next, paste and run [supabase/budgets.sql](file:///Users/ting/Documents/Antigravity/expenses-pro/supabase/budgets.sql) and [supabase/subscriptions.sql](file:///Users/ting/Documents/Antigravity/expenses-pro/supabase/subscriptions.sql) to add the budget and recurring payment tables.
    * *This will generate your tables, establish the balance update trigger, enable RLS, configure your storage buckets, and apply security policies.*
 
 ### 2. Local Environment Setup
