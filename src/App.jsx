@@ -384,9 +384,21 @@ export default function App() {
 
           {/* TAB 3: STATISTICS & TRENDS */}
           {currentTab === 'reports' && (
-            <StatisticsReports 
-              transactions={transactions} 
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-slide-in">
+              <div className="lg:col-span-8">
+                <StatisticsReports 
+                  transactions={transactions} 
+                />
+              </div>
+              <div className="lg:col-span-4">
+                <Dashboard 
+                  transactions={transactions} 
+                  budgets={budgets} 
+                  userId={session.user.id}
+                  onBudgetUpdated={fetchUserData}
+                />
+              </div>
+            </div>
           )}
 
           {/* TAB 4: SETTINGS & SUB-MANAGERS */}
@@ -401,7 +413,7 @@ export default function App() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                   
-                  {/* Column 1: Recurring billing trigger & budget config */}
+                  {/* Column 1: Recurring billing trigger & Sandbox Mode */}
                   <div className="space-y-6">
                     <button
                       onClick={() => setShowSubscriptions(true)}
@@ -417,13 +429,21 @@ export default function App() {
                       <span className="text-slate-400 text-xs font-bold">→</span>
                     </button>
 
-                    <Dashboard 
-                      accounts={accounts} 
-                      transactions={transactions} 
-                      budgets={budgets} 
-                      userId={session.user.id}
-                      onBudgetUpdated={fetchUserData}
-                    />
+                    <div className="cyber-card p-5 rounded-3xl border border-white/5 space-y-4">
+                      <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span>🧪 Sandbox Simulation Mode</span>
+                      </h4>
+                      <p className="text-[10px] text-slate-400 leading-relaxed">
+                        Need realistic data to test budgets, category alerts, and line-item insights? Generate mock statement profiles instantly.
+                      </p>
+                      <button
+                        onClick={handlePopulateDemo}
+                        disabled={demoLoading}
+                        className="w-full py-2.5 bg-slate-900 border border-white/5 hover:bg-indigo-950/20 text-indigo-400 hover:border-indigo-900/50 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 active:scale-[0.98]"
+                      >
+                        {demoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '📊 Populate Mock Sandbox'}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Column 2: Backups manager */}
