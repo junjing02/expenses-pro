@@ -232,7 +232,8 @@ export default function StatisticsReports({ transactions = [] }) {
       .filter(tx => tx.category === catId)
       .forEach(tx => {
         const merchant = tx.description.trim() || 'Unknown';
-        merchantMap[merchant] = (merchantMap[merchant] || 0) + tx.amount;
+        const amt = parseFloat(tx.amount || 0);
+        merchantMap[merchant] = (merchantMap[merchant] || 0) + amt;
       });
 
     return Object.entries(merchantMap)

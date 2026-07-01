@@ -7,15 +7,11 @@ import TransactionForm from './components/TransactionForm';
 import ReceiptScanner from './components/ReceiptScanner';
 import ImportExport from './components/ImportExport';
 import SubscriptionsManager from './components/SubscriptionsManager';
-import GoalsManager from './components/GoalsManager';
-import BillCalendar from './components/BillCalendar';
-import FinanceInsights from './components/FinanceInsights';
 import Dashboard from './components/Dashboard'; 
 import ErrorBoundary from './components/ErrorBoundary';
 import { 
   Home, Wallet, BarChart2, Settings, Plus, X, LogOut, Moon, Sun, 
-  Loader2, RefreshCw, Mail, Lock, UserPlus, LogIn, Camera, FileText,
-  Target, Calendar, Lightbulb, Landmark, Database, Layers
+  Loader2, RefreshCw, Mail, Lock, UserPlus, LogIn, Camera, FileText
 } from 'lucide-react';
 
 export default function App() {
@@ -48,9 +44,7 @@ export default function App() {
       setSession(session);
     });
 
-    // Dark mode is default
     document.documentElement.classList.add('dark');
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -61,7 +55,6 @@ export default function App() {
     }
   }, [session]);
 
-  // Fetch accounts, transactions, and budgets from Supabase
   const fetchUserData = async () => {
     if (!session?.user) return;
     setDataLoading(true);
@@ -116,7 +109,6 @@ export default function App() {
     }
   };
 
-  // Auth Submit Handlers
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     if (!authEmail || !authPassword) return;
@@ -155,11 +147,10 @@ export default function App() {
     }
   };
 
-  // Auth Portal Render
+  // Auth Portal
   if (!session) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4 transition-colors relative overflow-hidden">
-        {/* Glowing cyber backdrops */}
         <div className="glow-blur top-10 left-10 bg-indigo-500/20"></div>
         <div className="glow-blur bottom-10 right-10 bg-purple-500/20"></div>
 
@@ -253,7 +244,6 @@ export default function App() {
     );
   }
 
-  // Mobile Bottom Tab Items
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'wallet', label: 'Wallet', icon: Wallet },
@@ -264,23 +254,23 @@ export default function App() {
   return (
     <div className="min-h-screen pb-28 lg:pb-12 bg-slate-950 text-slate-100 transition-colors relative overflow-hidden">
       
-      {/* Background radial neon glows */}
+      {/* Background neon glows */}
       <div className="glow-blur top-0 right-1/4 bg-indigo-500/10"></div>
       <div className="glow-blur bottom-0 left-1/4 bg-violet-500/10"></div>
 
-      {/* Header bar */}
-      <header className="py-4 px-4 sm:px-6 lg:px-8 border-b border-white/5 bg-slate-900/50 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl w-full mx-auto flex items-center justify-between">
+      {/* Glass navigation header bar */}
+      <header className="py-4 px-4 sm:px-6 lg:px-8 border-b border-white/5 bg-slate-900/50 backdrop-blur-md sticky top-0 z-35">
+        <div className="max-w-4xl w-full mx-auto flex items-center justify-between">
           
-          {/* Brand logo */}
+          {/* Logo brand */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentTab('home')}>
             <span className="font-black text-xl tracking-tight bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent text-neon-indigo">
               Moneyboard Pro
             </span>
           </div>
 
-          {/* Desktop tab menus */}
-          <nav className="hidden lg:flex items-center gap-1.5 p-1 bg-slate-900 border border-white/5 rounded-2xl">
+          {/* Desktop Tab Selector list (Works perfectly on web now!) */}
+          <nav className="hidden sm:flex items-center gap-1 p-1 bg-slate-900 border border-white/5 rounded-2xl">
             {navItems.map(item => {
               const Icon = item.icon;
               const active = currentTab === item.id;
@@ -304,8 +294,8 @@ export default function App() {
             })}
           </nav>
 
-          {/* Right Header Utilities */}
-          <div className="flex items-center gap-2.5">
+          {/* Right side controls */}
+          <div className="flex items-center gap-2">
             <button 
               onClick={fetchUserData}
               disabled={dataLoading}
@@ -317,7 +307,7 @@ export default function App() {
 
             <button 
               onClick={handleSignOut}
-              className="p-2.5 rounded-xl border border-white/5 bg-slate-900/40 hover:bg-rose-950/20 text-slate-450 hover:text-rose-400 transition-colors"
+              className="p-2.5 rounded-xl border border-white/5 bg-slate-900/40 hover:bg-rose-950/25 text-slate-450 hover:text-rose-450 transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -326,10 +316,10 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Workspace Presenter */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 relative z-10">
+      {/* Main tab display presenter area */}
+      <main className="max-w-4xl w-full mx-auto px-4 mt-8 flex-grow relative z-10">
         
-        {/* Onboarding Empty State banner */}
+        {/* Empty Onboarding banner */}
         {accounts.length === 0 && transactions.length === 0 && (
           <div className="cyber-card rounded-3xl p-6 text-center space-y-4 max-w-2xl mx-auto mb-8 animate-scale-in">
             <span className="text-3xl block">👋</span>
@@ -340,100 +330,40 @@ export default function App() {
             <button
               onClick={handlePopulateDemo}
               disabled={demoLoading}
-              className="px-5 py-2.5 bg-indigo-650 hover:bg-indigo-600 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-650/15 transition-all flex items-center justify-center gap-1.5 mx-auto"
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-550 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-650/15 transition-all flex items-center justify-center gap-1.5 mx-auto"
             >
               {demoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '📊 Populate Demo Sandbox'}
             </button>
           </div>
         )}
 
-        {/* 1. DESKTOP WORKSPACE (Futuristic Command Grid - Side by Side!) */}
-        <div className="hidden lg:grid grid-cols-12 gap-6 items-start">
+        {/* Tab Routing presenter wrapped in ErrorBoundary */}
+        <ErrorBoundary>
           
-          {/* Left Column (Colspan-3): Wallets Scorecards & Savings Targets */}
-          <div className="col-span-3 space-y-6">
-            <ErrorBoundary>
-              <WalletList 
-                userId={session.user.id} 
-                accounts={accounts} 
-                onAccountAdded={fetchUserData} 
-              />
-            </ErrorBoundary>
-          </div>
-
-          {/* Center Column (Colspan-6): Trend Charts & Grouped Ledger timeline */}
-          <div className="col-span-6 space-y-6">
-            
-            {/* Top Quick Actions Panel */}
-            <div className="cyber-card p-4 rounded-3xl flex justify-around items-center">
-              <span className="text-xs font-bold text-slate-350 tracking-wide">Ledger Controls:</span>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="px-4 py-2 bg-indigo-650 hover:bg-indigo-550 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Manual Transaction</span>
-                </button>
-                <button
-                  onClick={() => setShowScanner(true)}
-                  className="px-4 py-2 bg-slate-900 border border-white/5 text-slate-200 hover:bg-slate-850 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
-                >
-                  <Camera className="w-4 h-4 text-indigo-400" />
-                  <span>Scan Receipt OCR</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Statistics chart */}
-            <ErrorBoundary>
-              <StatisticsReports 
-                transactions={transactions} 
-              />
-            </ErrorBoundary>
-
-            {/* Daily timeline ledger */}
-            <ErrorBoundary>
-              <HomeLedger 
-                userId={session.user.id} 
-                accounts={accounts} 
-                transactions={transactions} 
-                onTransactionDeleted={fetchUserData} 
-              />
-            </ErrorBoundary>
-          </div>
-
-          {/* Right Column (Colspan-3): Subscriptions Reminders & Budgets config */}
-          <div className="col-span-3 space-y-6">
-            
-            {/* Budgets threshold checker */}
-            <ErrorBoundary>
-              <Dashboard 
-                accounts={accounts} 
-                transactions={transactions} 
-                budgets={budgets} 
-                userId={session.user.id}
-                onBudgetUpdated={fetchUserData}
-              />
-            </ErrorBoundary>
-
-            {/* CSV Backup files manager */}
-            <ErrorBoundary>
-              <ImportExport 
-                userId={session.user.id} 
-                accounts={accounts} 
-                transactions={transactions}
-                onDataImported={fetchUserData} 
-              />
-            </ErrorBoundary>
-          </div>
-
-        </div>
-
-        {/* 2. MOBILE WORKSPACE (Standard tab filtering slide) */}
-        <div className="lg:hidden space-y-6">
+          {/* TAB 1: HOME LEDGER */}
           {currentTab === 'home' && (
             <div className="space-y-6">
+              {/* Quick Transaction action headers */}
+              <div className="cyber-card p-4 rounded-3xl flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-350 tracking-wide">Quick Action:</span>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAddForm(true)}
+                    className="px-4 py-2 bg-indigo-650 hover:bg-indigo-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Manual</span>
+                  </button>
+                  <button
+                    onClick={() => setShowScanner(true)}
+                    className="px-4 py-2 bg-slate-900 border border-white/5 text-slate-205 hover:bg-slate-855 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                  >
+                    <Camera className="w-4 h-4 text-indigo-450" />
+                    <span>Scan Receipt</span>
+                  </button>
+                </div>
+              </div>
+
               <HomeLedger 
                 userId={session.user.id} 
                 accounts={accounts} 
@@ -443,6 +373,7 @@ export default function App() {
             </div>
           )}
 
+          {/* TAB 2: WALLETS & SAVINGS GOALS */}
           {currentTab === 'wallet' && (
             <WalletList 
               userId={session.user.id} 
@@ -451,12 +382,14 @@ export default function App() {
             />
           )}
 
+          {/* TAB 3: STATISTICS & TRENDS */}
           {currentTab === 'reports' && (
             <StatisticsReports 
               transactions={transactions} 
             />
           )}
 
+          {/* TAB 4: SETTINGS & SUB-MANAGERS */}
           {currentTab === 'settings' && (
             <div className="space-y-6">
               {showSubscriptions ? (
@@ -466,46 +399,53 @@ export default function App() {
                   onClose={() => setShowSubscriptions(false)}
                 />
               ) : (
-                <>
-                  <button
-                    onClick={() => setShowSubscriptions(true)}
-                    className="w-full p-4 bg-slate-900 border border-white/5 rounded-3xl text-left flex justify-between items-center shadow-sm hover:bg-slate-850 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">🗓️</span>
-                      <div>
-                        <h4 className="text-xs font-bold text-white">Recurring & Subscriptions</h4>
-                        <p className="text-[10px] text-slate-500 mt-0.5">Manage fixed bills, loans, and music configs</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  
+                  {/* Column 1: Recurring billing trigger & budget config */}
+                  <div className="space-y-6">
+                    <button
+                      onClick={() => setShowSubscriptions(true)}
+                      className="w-full p-4 bg-slate-900 border border-white/5 rounded-3xl text-left flex justify-between items-center shadow-sm hover:bg-slate-850 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">🗓️</span>
+                        <div>
+                          <h4 className="text-xs font-bold text-white">Recurring & Subscriptions</h4>
+                          <p className="text-[10px] text-slate-500 mt-0.5">Manage fixed bills, loans, and music configs</p>
+                        </div>
                       </div>
-                    </div>
-                    <span className="text-slate-400 text-xs font-bold">→</span>
-                  </button>
+                      <span className="text-slate-400 text-xs font-bold">→</span>
+                    </button>
 
-                  <Dashboard 
-                    accounts={accounts} 
-                    transactions={transactions} 
-                    budgets={budgets} 
-                    userId={session.user.id}
-                    onBudgetUpdated={fetchUserData}
-                  />
+                    <Dashboard 
+                      accounts={accounts} 
+                      transactions={transactions} 
+                      budgets={budgets} 
+                      userId={session.user.id}
+                      onBudgetUpdated={fetchUserData}
+                    />
+                  </div>
 
-                  <ImportExport 
-                    userId={session.user.id} 
-                    accounts={accounts} 
-                    transactions={transactions}
-                    onDataImported={fetchUserData} 
-                  />
-                </>
+                  {/* Column 2: Backups manager */}
+                  <div className="space-y-6">
+                    <ImportExport 
+                      userId={session.user.id} 
+                      accounts={accounts} 
+                      transactions={transactions}
+                      onDataImported={fetchUserData} 
+                    />
+                  </div>
+
+                </div>
               )}
             </div>
           )}
-        </div>
 
-      </div>
+        </ErrorBoundary>
+      </main>
 
       {/* Floating Bottom Tab Bar (Mobile/Tablet View only - glass-dock styling!) */}
-      <div className="lg:hidden fixed bottom-6 left-4 right-4 z-40 glass-dock rounded-3xl py-2.5 px-4 flex items-center justify-between">
-        {/* Left two tabs */}
+      <div className="sm:hidden fixed bottom-6 left-4 right-4 z-40 glass-dock rounded-3xl py-2.5 px-4 flex items-center justify-between">
         <div className="flex justify-around items-center w-2/5">
           {navItems.slice(0, 2).map(item => {
             const Icon = item.icon;
@@ -526,15 +466,13 @@ export default function App() {
           })}
         </div>
 
-        {/* Central quick action trigger */}
         <button
           onClick={() => setShowFabMenu(true)}
-          className="w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-550 text-white flex items-center justify-center shadow-lg transform -translate-y-4 shadow-indigo-650/30 z-50 transition-transform active:scale-95"
+          className="w-12 h-12 rounded-full bg-indigo-650 hover:bg-indigo-600 text-white flex items-center justify-center shadow-lg transform -translate-y-4 shadow-indigo-650/30 z-50 transition-transform active:scale-95"
         >
           <Plus className="w-6 h-6" />
         </button>
 
-        {/* Right two tabs */}
         <div className="flex justify-around items-center w-2/5">
           {navItems.slice(2, 4).map(item => {
             const Icon = item.icon;
@@ -556,9 +494,9 @@ export default function App() {
         </div>
       </div>
 
-      {/* MODAL 1: FAB Options Menu Modal overlay */}
+      {/* MODAL 1: FAB Options Menu Modal */}
       {showFabMenu && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end justify-center" onClick={() => setShowFabMenu(false)}>
+        <div className="fixed inset-0 bg-slate-955/60 backdrop-blur-sm z-50 flex items-end justify-center" onClick={() => setShowFabMenu(false)}>
           <div className="bg-slate-900 w-full max-w-sm rounded-t-3xl p-6 shadow-2xl border-t border-white/5 animate-slide-up" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-5 pb-3 border-b border-white/5">
               <h2 className="text-sm font-bold text-white">Record Transaction</h2>
@@ -616,7 +554,7 @@ export default function App() {
 
       {/* MODAL 3: OCR Scanner Modal */}
       {showScanner && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-955/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 w-full max-w-lg rounded-3xl p-5 shadow-2xl relative border border-white/5 animate-scale-in">
             <button onClick={() => setShowScanner(false)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-800 z-10">
               <X className="w-4.5 h-4.5 text-slate-450" />
