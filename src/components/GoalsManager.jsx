@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Plus, X, Trash2, Loader2, Target, PiggyBank, ArrowUpRight } from 'lucide-react';
+import { Plus, X, Trash2, Loader2, Target, PiggyBank, ArrowUpRight, AlertCircle } from 'lucide-react';
 
 export default function GoalsManager({ userId, accounts = [], onGoalUpdated }) {
   const [goals, setGoals] = useState([]);
