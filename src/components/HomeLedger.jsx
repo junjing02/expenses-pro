@@ -61,11 +61,14 @@ export default function HomeLedger({ userId, accounts = [], transactions = [], o
   currentMonthTransactions.forEach(tx => {
     const dateStr = tx.transaction_date;
     if (!groupedTransactions[dateStr]) {
+      const parsedDate = new Date(dateStr);
+      const isValidDate = !isNaN(parsedDate.getTime());
+      
       groupedTransactions[dateStr] = {
         dateString: dateStr,
-        dayNum: new Date(dateStr).getDate(),
-        dayOfWeek: new Date(dateStr).toLocaleString('en-US', { weekday: 'long' }),
-        monthStr: new Date(dateStr).toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+        dayNum: isValidDate ? parsedDate.getDate() : '??',
+        dayOfWeek: isValidDate ? parsedDate.toLocaleString('en-US', { weekday: 'long' }) : 'Unknown Day',
+        monthStr: isValidDate ? parsedDate.toLocaleString('en-US', { month: 'short' }).toUpperCase() : '???',
         totalDailySpent: 0,
         items: []
       };

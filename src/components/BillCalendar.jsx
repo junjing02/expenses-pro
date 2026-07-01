@@ -37,6 +37,9 @@ export default function BillCalendar({ userId, accounts = [] }) {
     if (!nextDateStr) return { label: 'Flexible', color: 'text-slate-400', badgeColor: 'bg-slate-100 dark:bg-slate-900' };
     
     const nextDate = new Date(nextDateStr);
+    if (isNaN(nextDate.getTime())) {
+      return { label: 'Flexible', color: 'text-slate-400', badgeColor: 'bg-slate-100 dark:bg-slate-900' };
+    }
     const timeDiff = nextDate.getTime() - now.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
@@ -89,6 +92,7 @@ export default function BillCalendar({ userId, accounts = [] }) {
             const status = getBillingStatus(sub.next_payment_date);
             const accName = getAccountName(sub.account_id);
             const nextDateObj = sub.next_payment_date ? new Date(sub.next_payment_date) : null;
+            const isValidDate = nextDateObj && !isNaN(nextDateObj.getTime());
             
             return (
               <div key={sub.id} className="p-3 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100/50 dark:border-slate-850/50 rounded-2xl flex items-center justify-between">
@@ -97,10 +101,10 @@ export default function BillCalendar({ userId, accounts = [] }) {
                   {/* Calendar Badge */}
                   <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/30 text-indigo-650 flex flex-col items-center justify-center font-bold">
                     <span className="text-[7px] uppercase font-black tracking-wider text-indigo-400">
-                      {nextDateObj ? nextDateObj.toLocaleString('en-US', { month: 'short' }) : 'N/A'}
+                      {isValidDate ? nextDateObj.toLocaleString('en-US', { month: 'short' }) : 'N/A'}
                     </span>
                     <span className="text-xs leading-none mt-0.5">
-                      {nextDateObj ? nextDateObj.getDate() : '-'}
+                      {isValidDate ? nextDateObj.getDate() : '-'}
                     </span>
                   </div>
 

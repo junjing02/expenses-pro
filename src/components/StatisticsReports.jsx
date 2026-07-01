@@ -95,7 +95,8 @@ export default function StatisticsReports({ transactions = [] }) {
   const categoryMap = {};
   const categoryCountMap = {};
   expenseTransactions.forEach(tx => {
-    categoryMap[tx.category] = (categoryMap[tx.category] || 0) + tx.amount;
+    const amt = parseFloat(tx.amount || 0);
+    categoryMap[tx.category] = (categoryMap[tx.category] || 0) + amt;
     categoryCountMap[tx.category] = (categoryCountMap[tx.category] || 0) + 1;
   });
 
@@ -140,8 +141,12 @@ export default function StatisticsReports({ transactions = [] }) {
       }
 
       expenseTransactions.forEach(tx => {
-        const day = new Date(tx.transaction_date).getDate();
-        dailyMap[day] = (dailyMap[day] || 0) + tx.amount;
+        const parsedDate = new Date(tx.transaction_date);
+        const day = parsedDate.getDate();
+        if (!isNaN(day)) {
+          const amt = parseFloat(tx.amount || 0);
+          dailyMap[day] = (dailyMap[day] || 0) + amt;
+        }
       });
 
       const labels = Object.keys(dailyMap).map(day => {
@@ -157,7 +162,7 @@ export default function StatisticsReports({ transactions = [] }) {
     } else {
       const sortedTxs = [...expenseTransactions].sort((a, b) => a.transaction_date.localeCompare(b.transaction_date));
       const labels = sortedTxs.map(tx => tx.transaction_date.split('-').slice(1).join('/'));
-      const data = sortedTxs.map(tx => tx.amount);
+      const data = sortedTxs.map(tx => parseFloat(tx.amount || 0));
       return { labels, data };
     }
   };

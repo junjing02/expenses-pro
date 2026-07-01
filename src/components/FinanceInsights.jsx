@@ -7,6 +7,7 @@ export default function FinanceInsights({ transactions = [] }) {
   const currentMonthTransactions = transactions.filter(tx => {
     if (!tx.transaction_date) return false;
     const txDate = new Date(tx.transaction_date);
+    if (isNaN(txDate.getTime())) return false;
     return txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth();
   });
 
@@ -31,7 +32,8 @@ export default function FinanceInsights({ transactions = [] }) {
   currentMonthTransactions
     .filter(tx => tx.type === 'expense')
     .forEach(tx => {
-      categoryMap[tx.category] = (categoryMap[tx.category] || 0) + tx.amount;
+      const amt = parseFloat(tx.amount || 0);
+      categoryMap[tx.category] = (categoryMap[tx.category] || 0) + amt;
     });
 
   let topCategory = 'None';
@@ -50,7 +52,9 @@ export default function FinanceInsights({ transactions = [] }) {
   currentMonthTransactions
     .filter(tx => tx.type === 'expense')
     .forEach(tx => {
-      if (!highestTx || tx.amount > highestTx.amount) {
+      const currentAmt = parseFloat(tx.amount || 0);
+      const highestAmt = highestTx ? parseFloat(highestTx.amount || 0) : 0;
+      if (!highestTx || currentAmt > highestAmt) {
         highestTx = tx;
       }
     });
