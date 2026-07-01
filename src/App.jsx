@@ -11,6 +11,7 @@ import GoalsManager from './components/GoalsManager';
 import BillCalendar from './components/BillCalendar';
 import FinanceInsights from './components/FinanceInsights';
 import Dashboard from './components/Dashboard'; 
+import ErrorBoundary from './components/ErrorBoundary';
 import { 
   Home, Wallet, BarChart2, Settings, Plus, X, LogOut, Moon, Sun, 
   Loader2, RefreshCw, Mail, Lock, UserPlus, LogIn, Camera, FileText,
@@ -351,11 +352,13 @@ export default function App() {
           
           {/* Left Column (Colspan-3): Wallets Scorecards & Savings Targets */}
           <div className="col-span-3 space-y-6">
-            <WalletList 
-              userId={session.user.id} 
-              accounts={accounts} 
-              onAccountAdded={fetchUserData} 
-            />
+            <ErrorBoundary>
+              <WalletList 
+                userId={session.user.id} 
+                accounts={accounts} 
+                onAccountAdded={fetchUserData} 
+              />
+            </ErrorBoundary>
           </div>
 
           {/* Center Column (Colspan-6): Trend Charts & Grouped Ledger timeline */}
@@ -367,7 +370,7 @@ export default function App() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowAddForm(true)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-550 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                  className="px-4 py-2 bg-indigo-650 hover:bg-indigo-550 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Manual Transaction</span>
@@ -383,38 +386,46 @@ export default function App() {
             </div>
 
             {/* Statistics chart */}
-            <StatisticsReports 
-              transactions={transactions} 
-            />
+            <ErrorBoundary>
+              <StatisticsReports 
+                transactions={transactions} 
+              />
+            </ErrorBoundary>
 
             {/* Daily timeline ledger */}
-            <HomeLedger 
-              userId={session.user.id} 
-              accounts={accounts} 
-              transactions={transactions} 
-              onTransactionDeleted={fetchUserData} 
-            />
+            <ErrorBoundary>
+              <HomeLedger 
+                userId={session.user.id} 
+                accounts={accounts} 
+                transactions={transactions} 
+                onTransactionDeleted={fetchUserData} 
+              />
+            </ErrorBoundary>
           </div>
 
           {/* Right Column (Colspan-3): Subscriptions Reminders & Budgets config */}
           <div className="col-span-3 space-y-6">
             
             {/* Budgets threshold checker */}
-            <Dashboard 
-              accounts={accounts} 
-              transactions={transactions} 
-              budgets={budgets} 
-              userId={session.user.id}
-              onBudgetUpdated={fetchUserData}
-            />
+            <ErrorBoundary>
+              <Dashboard 
+                accounts={accounts} 
+                transactions={transactions} 
+                budgets={budgets} 
+                userId={session.user.id}
+                onBudgetUpdated={fetchUserData}
+              />
+            </ErrorBoundary>
 
             {/* CSV Backup files manager */}
-            <ImportExport 
-              userId={session.user.id} 
-              accounts={accounts} 
-              transactions={transactions}
-              onDataImported={fetchUserData} 
-            />
+            <ErrorBoundary>
+              <ImportExport 
+                userId={session.user.id} 
+                accounts={accounts} 
+                transactions={transactions}
+                onDataImported={fetchUserData} 
+              />
+            </ErrorBoundary>
           </div>
 
         </div>

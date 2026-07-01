@@ -37,11 +37,12 @@ export default function Dashboard({ accounts, transactions, budgets = [], userId
   let expenseCount = 0;
 
   transactions.forEach(tx => {
+    const amt = parseFloat(tx.amount || 0);
     if (tx.type === 'income') {
-      totalIncome += tx.amount;
+      totalIncome += amt;
       incomeCount++;
     } else {
-      totalExpenses += tx.amount;
+      totalExpenses += amt;
       expenseCount++;
     }
   });
@@ -51,7 +52,8 @@ export default function Dashboard({ accounts, transactions, budgets = [], userId
   transactions
     .filter(tx => tx.type === 'expense')
     .forEach(tx => {
-      categoryMap[tx.category] = (categoryMap[tx.category] || 0) + tx.amount;
+      const amt = parseFloat(tx.amount || 0);
+      categoryMap[tx.category] = (categoryMap[tx.category] || 0) + amt;
     });
 
   const findCategoryConfig = (catId) => {
